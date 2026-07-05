@@ -291,6 +291,7 @@ async def ensure_default_link():
                     "protocol": DEFAULT_PROTOCOL,
                     "max_devices": 0,
                     "fingerprint": "chrome",
+                    "password_hash": None,
                 }
                 asyncio.create_task(save_state())
         _default_link_created = True
@@ -304,10 +305,9 @@ async def root():
 async def health():
     return {"status": "ok", "connections": len(connections), "uptime": uptime()}
 
-# ── Subscription (صفحه ساب‌لینک عقابی) ─────────────────────────────────────
+# ── Subscription ──────────────────────────────────────────────────────────────
 @app.get("/sub/{uuid}")
 async def subscription_single(uuid: str):
-    """صفحه نمایش اطلاعات کاربر با طراحی عقابی"""
     from pages import get_sub_page_html
     
     async with LINKS_LOCK:
@@ -636,7 +636,8 @@ async def get_connections(_=Depends(require_auth)):
         "raw_count": len(connections),
     }
 
-# ── Link Management ───────────────────────────────────────────────────────────
+# ── Link Management (با پشتیبانی از رمز) ────────────────────────────────────
+
 @app.post("/api/links")
 async def create_link(request: Request, _=Depends(require_auth)):
     body = await request.json()
@@ -654,6 +655,10 @@ async def create_link(request: Request, _=Depends(require_auth)):
     
     max_devices = int(body.get("max_devices", 0))
     fingerprint = body.get("fingerprint", "chrome")
+    
+    # ===== رمز محافظت از کانفیگ =====
+    config_password = body.get("password", "").strip()
+    password_hash = hash_password(config_password) if config_password else None
 
     uid = generate_uuid()
     async with LINKS_LOCK:
@@ -670,6 +675,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
             "protocol": protocol,
             "max_devices": max_devices,
             "fingerprint": fingerprint,
+            "password_hash": password_hash,
         }
 
     if sub_id:
@@ -686,6 +692,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
         "uuid": uid,
         **LINKS[uid],
         "expired": False,
+        "has_password": password_hash is not None,
         "vless_link": generate_vless_link(uid, host, remark=f"🦅-{label}", protocol=protocol, fingerprint=fingerprint),
         "sub_url": f"https://{host}/sub/{uid}",
     }
@@ -706,6 +713,7 @@ async def list_links(_=Depends(require_auth)):
             "fingerprint": fp,
             "max_devices": d.get("max_devices", 0),
             "expired": is_link_expired(d),
+            "has_password": d.get("password_hash") is not None,
             "vless_link": generate_vless_link(uid, host, remark=f"🦅-{d['label']}", protocol=proto, fingerprint=fp),
             "sub_url": f"https://{host}/sub/{uid}",
         })
@@ -715,22 +723,31 @@ async def list_links(_=Depends(require_auth)):
 @app.patch("/api/links/{uid}")
 async def update_link(uid: str, request: Request, _=Depends(require_auth)):
     body = await request.json()
+    
     async with LINKS_LOCK:
         if uid not in LINKS:
             raise HTTPException(status_code=404, detail="link not found")
         link = LINKS[uid]
+        
+        # ===== بررسی رمز برای ویرایش =====
+        if link.get("password_hash"):
+            password = body.get("password", "").strip()
+            if not password:
+                raise HTTPException(status_code=403, detail="برای ویرایش این کانفیگ رمز آن را وارد کنید")
+            if hash_password(password) != link["password_hash"]:
+                raise HTTPException(status_code=403, detail="رمز کانفیگ اشتباه است")
+        
         old_sub = link.get("sub_id")
         label = link.get("label")
+        
         if "active" in body:
             link["active"] = bool(body["active"])
-            log_activity("link", f"کانفیگ «{label}» {'فعال' if link['active'] else 'غیرفعال'} شد", "ok" if link['active'] else "warn")
         if "label" in body:
             link["label"] = str(body["label"])[:60]
         if "note" in body:
             link["note"] = str(body["note"])[:200]
         if "reset_usage" in body and body["reset_usage"]:
             link["used_bytes"] = 0
-            log_activity("link", f"مصرف کانفیگ «{label}» ریست شد", "info")
         if "limit_value" in body:
             lv = float(body.get("limit_value") or 0)
             lu = body.get("limit_unit") or "GB"
@@ -742,8 +759,10 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
             link["max_devices"] = int(body["max_devices"])
         if "fingerprint" in body:
             link["fingerprint"] = str(body["fingerprint"])
-        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint")):
-            log_activity("link", f"کانفیگ «{link['label']}» ویرایش شد", "info")
+        if "protocol" in body:
+            protocol = body["protocol"]
+            if protocol in PROTOCOLS:
+                link["protocol"] = protocol
         new_sub = body.get("sub_id", "UNCHANGED")
         if new_sub != "UNCHANGED":
             link["sub_id"] = new_sub or None
@@ -760,22 +779,37 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
                     ids.append(uid)
 
     asyncio.create_task(save_state())
+    log_activity("link", f"کانفیگ «{link['label']}» ویرایش شد", "info")
     return {"ok": True}
 
 @app.delete("/api/links/{uid}")
-async def delete_link(uid: str, _=Depends(require_auth)):
+async def delete_link(uid: str, request: Request, _=Depends(require_auth)):
+    body = await request.json()
+    password = body.get("password", "").strip()
+    
     async with LINKS_LOCK:
         if uid not in LINKS:
             raise HTTPException(status_code=404, detail="link not found")
-        label = LINKS[uid].get("label", uid)
-        sub_id = LINKS[uid].get("sub_id")
+        link = LINKS[uid]
+        
+        # ===== بررسی رمز برای حذف =====
+        if link.get("password_hash"):
+            if not password:
+                raise HTTPException(status_code=403, detail="برای حذف این کانفیگ رمز آن را وارد کنید")
+            if hash_password(password) != link["password_hash"]:
+                raise HTTPException(status_code=403, detail="رمز کانفیگ اشتباه است")
+        
+        label = link.get("label", uid)
+        sub_id = link.get("sub_id")
         del LINKS[uid]
+    
     if sub_id:
         async with SUBS_LOCK:
             if sub_id in SUBS:
                 ids = SUBS[sub_id].get("link_ids", [])
                 if uid in ids:
                     ids.remove(uid)
+    
     asyncio.create_task(save_state())
     log_activity("link", f"کانفیگ «{label}» حذف شد", "err")
     return {"ok": True, "deleted": uid}
@@ -873,6 +907,7 @@ async def public_sub_data(uuid_key: str, request: Request):
             "limit_bytes": link.get("limit_bytes", 0),
             "limit_fmt": "∞" if link.get("limit_bytes", 0) == 0 else fmt_bytes(link["limit_bytes"]),
             "expires_at": link.get("expires_at"),
+            "has_password": link.get("password_hash") is not None,
             "vless_link": generate_vless_link(lid, host, remark=f"🦅-{link['label']}", protocol=proto, fingerprint=fp),
             "sub_url": f"https://{host}/sub/{lid}",
             "connections": conn_count,
