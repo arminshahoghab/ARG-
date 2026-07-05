@@ -311,7 +311,6 @@ async def ensure_default_link():
                     "protocol": DEFAULT_PROTOCOL,
                     "max_devices": 0,
                     "fingerprint": "chrome",
-                    "outbound_ip": "",
                 }
                 asyncio.create_task(save_state())
         _default_link_created = True
@@ -357,8 +356,6 @@ async def subscription_single(uuid: str, request: Request):
     
     label = link.get('label', 'کاربر')
     is_allowed = active and not expired
-    outbound_ip = link.get('outbound_ip', '')
-    ip_display = outbound_ip if outbound_ip else '🔄 IP پیش‌فرض (سرور)'
     
     return HTMLResponse(f"""
     <!DOCTYPE html>
@@ -469,14 +466,6 @@ async def subscription_single(uuid: str, request: Request):
             }}
             .info-value.used {{ color: #A78BFA; }}
             .info-value.remain {{ color: #34D399; }}
-            .info-value.proxy {{
-                color: #FCD34D;
-                font-size: 12px;
-                background: rgba(245,158,11,0.1);
-                padding: 4px 12px;
-                border-radius: 12px;
-                border: 1px solid rgba(245,158,11,0.15);
-            }}
             .progress {{
                 margin: 16px 0 20px;
             }}
@@ -519,11 +508,6 @@ async def subscription_single(uuid: str, request: Request):
                 word-break: break-all;
                 margin-top: 8px;
             }}
-            .badge-proxy {{
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-            }}
         </style>
     </head>
     <body>
@@ -557,15 +541,6 @@ async def subscription_single(uuid: str, request: Request):
                 <div class="info-item">
                     <span class="info-label">📱 دستگاه‌ها</span>
                     <span class="info-value">{link.get('max_devices', 0) if link.get('max_devices', 0) > 0 else '∞'}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">🌐 IP خروجی</span>
-                    <span class="info-value proxy">
-                        <span class="badge-proxy">
-                            <i class="ti ti-shield"></i>
-                            {ip_display}
-                        </span>
-                    </span>
                 </div>
             </div>
 
@@ -886,7 +861,6 @@ async def create_link(request: Request, _=Depends(require_auth)):
     
     max_devices = int(body.get("max_devices", 0))
     fingerprint = body.get("fingerprint", "chrome")
-    outbound_ip = body.get("outbound_ip", "").strip()
 
     uid = generate_uuid()
     async with LINKS_LOCK:
@@ -903,7 +877,6 @@ async def create_link(request: Request, _=Depends(require_auth)):
             "protocol": protocol,
             "max_devices": max_devices,
             "fingerprint": fingerprint,
-            "outbound_ip": outbound_ip,
         }
 
     if sub_id:
@@ -976,9 +949,7 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
             link["max_devices"] = int(body["max_devices"])
         if "fingerprint" in body:
             link["fingerprint"] = str(body["fingerprint"])
-        if "outbound_ip" in body:
-            link["outbound_ip"] = str(body["outbound_ip"]).strip()
-        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint", "outbound_ip")):
+        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint")):
             log_activity("link", f"کانفیگ «{link['label']}» ویرایش شد", "info")
         new_sub = body.get("sub_id", "UNCHANGED")
         if new_sub != "UNCHANGED":
@@ -1114,7 +1085,6 @@ async def public_sub_data(uuid_key: str, request: Request):
             "vless_link": generate_vless_link(lid, host, remark=f"ARG-{link['label']}", protocol=proto, fingerprint=fp),
             "sub_url": f"https://{host}/sub/{lid}",
             "connections": conn_count,
-            "outbound_ip": link.get("outbound_ip", ""),
         })
 
     total_used = sum(l["used_bytes"] for l in links_out)
