@@ -1,4 +1,4 @@
-# pages.py - پنل عقاب (نسخه کامل با تم آتشین + هشدار رایگان بودن)
+# pages.py - پنل عقاب (نسخه ساده با اسم رایگان + تایید)
 
 LOGIN_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -154,14 +154,6 @@ body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#1a050
 .fg3{width:300px;height:300px;background:rgba(200,50,0,0.03);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:2s}
 @keyframes orbFloat{0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-40px)}66%{transform:translate(-30px,30px)}}
 
-/* ===== بنر هشدار رایگان ===== */
-.free-banner{background:linear-gradient(135deg,#FF6B35,#FF4500,#FF8C00);background-size:200% 200%;animation:btnFire 3s ease infinite;padding:8px 12px;text-align:center;font-size:11px;font-weight:800;color:#fff;position:sticky;top:0;z-index:999;box-shadow:0 2px 20px rgba(255,80,20,0.3);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid rgba(255,255,255,0.1)}
-.free-banner .highlight{background:#fff;color:#FF4500;padding:0 10px;border-radius:4px;font-size:12px}
-@keyframes btnFire{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-
-/* ===== واترمارک ===== */
-body::after{content:'🦅 پنل رایگان · فروش ممنوع';position:fixed;bottom:10px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,80,20,0.06);z-index:999;pointer-events:none;font-weight:900;letter-spacing:2px;white-space:nowrap}
-
 .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--card);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-left:1px solid var(--card-b);display:flex;flex-direction:column;flex-shrink:0;position:fixed;right:0;top:0;bottom:0;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1),background .3s;box-shadow:var(--shadow)}
 .logo{display:flex;align-items:center;gap:14px;padding:22px 18px 18px;border-bottom:1px solid var(--card-b)}
 .logo-icon{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#FF6B35,#FF4500);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 0 40px rgba(255,80,20,0.15);animation:flamePulse 2s ease-in-out infinite}
@@ -238,9 +230,8 @@ body::after{content:'🦅 پنل رایگان · فروش ممنوع';position:f
 .user-card .actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .user-card .actions .btn{flex:1;justify-content:center;min-width:fit-content;font-size:10px}
 .user-card .lock-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--amber-t);background:var(--amber-bg);padding:2px 8px;border-radius:10px;border:1px solid rgba(245,158,11,0.15)}
-.user-card .warning-box{background:linear-gradient(135deg,rgba(255,80,20,0.15),rgba(255,50,0,0.05));border:2px solid rgba(255,80,20,0.25);border-radius:8px;padding:8px 10px;margin-top:6px;font-size:8px;color:#FF8C00;font-family:monospace;white-space:pre-wrap;text-align:center;direction:ltr;line-height:1.6;font-weight:700;box-shadow:0 0 20px rgba(255,80,20,0.05)}
+.user-card .warning-box{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.12);border-radius:6px;padding:5px 8px;margin-top:6px;font-size:7.5px;color:var(--red-t);font-family:monospace;white-space:pre-wrap;max-height:50px;overflow-y:auto;direction:ltr;text-align:left;line-height:1.4}
 .user-card .conn-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:#34D399;background:rgba(16,185,129,0.08);padding:2px 8px;border-radius:10px;border:1px solid rgba(16,185,129,0.12)}
-.user-card .free-tag{display:inline-flex;align-items:center;gap:3px;font-size:8px;color:#fff;background:linear-gradient(135deg,#FF6B35,#FF4500);padding:2px 10px;border-radius:12px;font-weight:800;box-shadow:0 0 20px rgba(255,80,20,0.2)}
 .empty{text-align:center;padding:50px 20px;color:var(--t3)}
 .empty i{font-size:38px;opacity:.3;display:block;margin-bottom:12px}
 
@@ -287,7 +278,6 @@ select.fi{appearance:none;cursor:pointer}
 .conn-card .conn-info{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--t2);gap:6px;flex-wrap:wrap}
 .conn-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#34D399;animation:pulse 1.5s infinite;margin-right:3px}
 
-/* ===== بخش تنظیمات ===== */
 .settings-card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:24px;max-width:500px}
 .settings-card .title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .settings-card .title i{color:var(--accent)}
@@ -297,10 +287,6 @@ select.fi{appearance:none;cursor:pointer}
 .settings-card .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,80,20,.08)}
 .settings-card .field input::placeholder{color:var(--t3)}
 .settings-card .btn{width:100%;justify-content:center;margin-top:4px}
-
-/* ===== فوتر رایگان ===== */
-.free-footer{text-align:center;padding:12px;font-size:10px;color:var(--t3);border-top:2px solid rgba(255,80,20,0.1);margin-top:20px}
-.free-footer .fire{color:#FF6B35;font-weight:700}
 
 @media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
@@ -316,14 +302,6 @@ select.fi{appearance:none;cursor:pointer}
 </style>
 </head>
 <body>
-
-<!-- ===== بنر هشدار رایگان ===== -->
-<div class="free-banner">
-    <span>🔥</span>
-    <span>⚠️ این پنل کاملاً <span class="highlight">رایگان</span> است · فروش آن ممنوع ⚠️</span>
-    <span>🔥</span>
-</div>
-
 <div class="fire-glow fg1"></div>
 <div class="fire-glow fg2"></div>
 <div class="fire-glow fg3"></div>
@@ -334,10 +312,6 @@ select.fi{appearance:none;cursor:pointer}
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-user')"><i class="ti ti-x"></i></button>
     <div class="modal-title"><i class="ti ti-user-plus"></i> 🔥 ساخت کانفیگ جدید</div>
-    
-    <div style="background:rgba(255,80,20,0.06);border:2px solid rgba(255,80,20,0.2);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#FF8C00;text-align:center;font-weight:700">
-        ⚠️ این پنل کاملاً رایگان است · فروش کانفیگ ممنوع ⚠️
-    </div>
     
     <div class="fg"><label><i class="ti ti-tag"></i> نام کاربری</label><input class="fi" id="user-label" placeholder="مثلاً: کاربر علی"></div>
     
@@ -498,8 +472,8 @@ select.fi{appearance:none;cursor:pointer}
 
 <section class="pg" id="pg-support">
   <div class="topbar"><div><div class="tb-title"><i class="ti ti-headset"></i> پشتیبانی</div><div class="tb-sub">راهنمایی و پشتیبانی سریع</div></div></div>
-  <div class="card" style="max-width:600px">
-    <div class="card-title"><i class="ti ti-messages"></i> ارتباط با پشتیبانی</div>
+  <div style="background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:24px;max-width:600px">
+    <div style="font-size:16px;font-weight:700;color:var(--t1);margin-bottom:16px;display:flex;align-items:center;gap:8px"><i class="ti ti-messages" style="color:var(--accent)"></i> ارتباط با پشتیبانی</div>
     <p style="font-size:13px;color:var(--t2);line-height:1.9;margin-bottom:16px">برای دریافت راهنمایی، پشتیبانی و پاسخ به سوالات خود، به گروه تلگرامی ما بپیوندید.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="window.open('https://t.me/+QyEVU0FquFczYjQ0','_blank')" style="flex:2"><i class="ti ti-brand-telegram"></i> عضویت در گروه پشتیبانی</button>
@@ -512,7 +486,6 @@ select.fi{appearance:none;cursor:pointer}
   </div>
 </section>
 
-<!-- ===== بخش تنظیمات ===== -->
 <section class="pg" id="pg-settings">
   <div class="topbar"><div><div class="tb-title"><i class="ti ti-settings"></i> تنظیمات پنل</div><div class="tb-sub">تغییر رمز عبور پنل مدیریت</div></div></div>
   <div class="settings-card">
@@ -533,7 +506,6 @@ select.fi{appearance:none;cursor:pointer}
   </div>
 </section>
 
-<!-- ===== بخش بکاپ ===== -->
 <section class="pg" id="pg-backup">
   <div class="topbar"><div><div class="tb-title"><i class="ti ti-database"></i> مدیریت بکاپ</div><div class="tb-sub">ذخیره و بازیابی اطلاعات</div></div></div>
   <div class="settings-card">
@@ -712,7 +684,6 @@ async function loadUsers() {
     document.getElementById('last-update').textContent = 'آخرین بروزرسانی: ' + new Date().toLocaleTimeString('fa-IR');
     document.getElementById('online-badge').innerHTML = '<span class="dot dg"></span> ' + online + ' آنلاین';
     
-    // ===== پر مصرف‌ترین کاربر =====
     try {
       const sr = await authF('/stats');
       const statsData = await sr.json();
@@ -740,9 +711,8 @@ async function loadUsers() {
       const subLink = `https://${host}/sub/${l.uuid}`;
       const hasPassword = l.has_password === true;
       const port = l.port || 443;
-      const warningText = l.warning_config || '⚠️ این پنل رایگان است و فروش آن ممنوع';
+      const warningText = l.warning_config || '';
       
-      // ===== تعداد اتصالات این کاربر =====
       const connCount = window.connCounts && window.connCounts[l.uuid] ? window.connCounts[l.uuid] : 0;
       const connBadge = connCount > 0 ? `<span class="conn-badge"><span class="dot dg" style="width:4px;height:4px"></span> ${connCount} متصل</span>` : '';
       
@@ -765,7 +735,7 @@ async function loadUsers() {
         <div class="quota-bar">
           <div class="quota-fill" style="width: ${pct}%; background: ${bc}"></div>
         </div>
-        <div class="warning-box">${esc(warningText)}</div>
+        ${warningText ? `<div class="warning-box">${esc(warningText)}</div>` : ''}
         <div class="actions">
           <button class="btn btn-sm btn-o" onclick="navigator.clipboard.writeText('${esc(l.vless_link)}').then(()=>toast('لینک کپی شد','ok'))"><i class="ti ti-copy"></i> لینک</button>
           <button class="btn btn-sm btn-pur" onclick="navigator.clipboard.writeText('${esc(subLink)}').then(()=>toast('ساب‌لینک کپی شد','ok'))"><i class="ti ti-link"></i> ساب</button>
@@ -916,7 +886,7 @@ async function confirmDelete() {
 // ===== ساخت کانفیگ جدید =====
 async function saveUser() {
   // ===== دیالوگ تایید رایگان بودن =====
-  if (!confirm('⚠️ تأیید می‌کنید که این کانفیگ را رایگان به کاربر میدهید و نمی‌فروشید؟')) {
+  if (!confirm('🔥 مطمئن هستید این کانفیگ را رایگان میدهید؟')) {
     return;
   }
   
@@ -960,7 +930,7 @@ async function saveUser() {
     document.getElementById('user-port').value = '443';
     
     closeModal('modal-user');
-    toast('🔥 کانفیگ رایگان ساخته شد ✓', 'ok');
+    toast('🔥 کانفیگ ساخته شد ✓', 'ok');
     loadUsers();
   } catch(e) {
     toast('خطا در ساخت', 'err');
@@ -991,13 +961,7 @@ async function loadConnections() {
     const count = d.count || 0;
     document.getElementById('conn-count').textContent = count + ' اتصال';
     
-    // ذخیره تعداد اتصالات هر کاربر برای نمایش توی کارت‌ها
     window.connCounts = {};
-    if (d.connections) {
-      d.connections.forEach(c => {
-        // سعی کن uuid رو از label استخراج کنی یا از جای دیگه
-      });
-    }
     
     if (!count) {
       grid.innerHTML = '<div class="empty"><i class="ti ti-plug-off"></i><p>هیچ اتصال فعالی وجود ندارد</p></div>';
@@ -1039,22 +1003,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 </body></html>"""
 
 
-# ===== پیام هشدار جدید برای کانفیگ =====
-WARNING_CONFIG = """🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-🔥  این پنل کاملاً رایگان است و فروش آن ممنوع  🔥
-🔥         قیمت این کانفیگ: ۰ تومان           🔥
-🔥      کانال رسمی: @EaglePanel              🔥
-🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-🦅 پنل عقاب - مدیریت کاربران
-⚠️ هرگونه فروش این کانفیگ غیرقانونی است
-⚠️ این پنل برای استفاده شخصی و رایگان طراحی شده
-⚠️ در صورت مشاهده فروش، لینک غیرفعال خواهد شد
-🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥"""
+# ===== WARNING_CONFIG خالی (چون دیگه نیاز نیست) =====
+WARNING_CONFIG = ""
 
 
-# ===== صفحه ساب‌لینک با تم آتشین =====
+# ===== صفحه ساب‌لینک با اسم رایگان =====
 def get_sub_page_html(uuid: str, link: dict) -> str:
-    """صفحه نمایش اطلاعات کاربر با تم آتشین و نمایش اتصالات زنده"""
+    """صفحه ساب‌لینک با اسم رایگان و اتصالات زنده"""
     
     used = link.get('used_bytes', 0)
     limit = link.get('limit_bytes', 0)
@@ -1086,16 +1041,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
         days_left = 'نامحدود'
     
     is_allowed = active and not expired
-    # ===== تغییر اسم کانفیگ توی کلاینت =====
-    vless_remark = f"🔥 رایگان - عقاب"
-    vless_link = link.get('vless_link', '')
-    # اگه لینک وجود داره، remark رو عوض کن
-    if vless_link:
-        # لینک رو به شکل vless://uuid@host:port?params#remark هست
-        # ما توی main داریم remark رو میسازیم، ولی اینجا هم یه نسخه میسازیم
-        pass
     sub_url = link.get('sub_url', '')
-    warning_config = WARNING_CONFIG
     
     def fmt_bytes(b):
         if not b or b == 0:
@@ -1117,7 +1063,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
         conns_html = f"""
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:12px;padding:12px 14px;margin:12px 0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:#8A4A3A">
-                <span class="conn-status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34D399;animation:pulse 1.5s infinite"></span>
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34D399;animation:pulse 1.5s infinite"></span>
                 <span style="font-weight:700;color:#34D399">{active_connections} دستگاه متصل</span>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -1142,7 +1088,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
         </div>
         """
     
-    # ===== ساخت لینک با اسم جدید =====
+    # ===== ساخت لینک با اسم رایگان =====
     from main import get_host, generate_vless_link
     host = get_host()
     new_vless_link = generate_vless_link(
@@ -1194,26 +1140,6 @@ body{{
     background-size:400% 400%;
     animation:fireBG 8s ease infinite;
 }}
-.free-banner{{
-    position:fixed;top:0;left:0;right:0;z-index:999;
-    background:linear-gradient(135deg,#FF6B35,#FF4500,#FF8C00);
-    background-size:200% 200%;
-    animation:btnFire 3s ease infinite;
-    padding:8px 12px;
-    text-align:center;
-    font-size:11px;
-    font-weight:800;
-    color:#fff;
-    box-shadow:0 2px 20px rgba(255,80,20,0.3);
-    border-bottom:2px solid rgba(255,255,255,0.1);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    flex-wrap:wrap;
-}}
-.free-banner .hl{{background:#fff;color:#FF4500;padding:0 10px;border-radius:4px;font-size:12px}}
-@keyframes btnFire{{0%{{background-position:0% 50%}}50%{{background-position:100% 50%}}100%{{background-position:0% 50%}}}}
 .fire-particles{{
     position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
 }}
@@ -1244,7 +1170,6 @@ body{{
     border-radius:28px;
     padding:40px 38px 34px;
     max-width:500px;width:100%;
-    margin-top:50px;
     box-shadow:0 0 100px rgba(255,80,20,0.05),0 25px 70px rgba(0,0,0,0.7);
     animation:cardIn 0.6s ease;
 }}
@@ -1340,22 +1265,6 @@ body{{
     background:rgba(0,0,0,0.3);padding:10px 12px;
     border-radius:8px;border:1px solid rgba(255,80,20,0.06);
 }}
-.warning-box{{
-    background:linear-gradient(135deg,rgba(255,80,20,0.15),rgba(255,50,0,0.05));
-    border:2px solid rgba(255,80,20,0.25);
-    border-radius:8px;
-    padding:8px 10px;
-    margin-top:12px;
-    font-size:8px;
-    color:#FF8C00;
-    font-family:monospace;
-    white-space:pre-wrap;
-    text-align:center;
-    direction:ltr;
-    line-height:1.6;
-    font-weight:700;
-    box-shadow:0 0 20px rgba(255,80,20,0.05);
-}}
 .actions{{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}}
 .btn{{
     font-family:inherit;font-size:12px;font-weight:600;
@@ -1400,9 +1309,8 @@ body{{
 }}
 .toast.show{{opacity:1;transform:translateX(-50%) translateY(0)}}
 .toast.ok{{border-color:rgba(16,185,129,0.2);color:#34D399}}
-.conn-status-dot{{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34D399;animation:pulse 1.5s infinite;margin-left:3px}}
 @media(max-width:520px){{
-    .card{{padding:28px 20px 24px;margin-top:60px}}
+    .card{{padding:28px 20px 24px}}
     .user-name{{font-size:20px}}
     .brand-icon{{width:44px;height:44px;font-size:22px}}
     .info-item{{padding:11px 14px}}
@@ -1411,13 +1319,6 @@ body{{
 </style>
 </head>
 <body>
-<!-- ===== بنر هشدار رایگان ===== -->
-<div class="free-banner">
-    <span>🔥</span>
-    <span>⚠️ این پنل کاملاً <span class="hl">رایگان</span> است · فروش آن ممنوع ⚠️</span>
-    <span>🔥</span>
-</div>
-
 <div class="fire-particles">
     <div class="fire-particle" style="left:5%;animation-delay:0s;width:8px;height:8px"></div>
     <div class="fire-particle" style="left:15%;animation-delay:2s;width:5px;height:5px"></div>
@@ -1465,13 +1366,12 @@ body{{
         <div class="vless-label"><i class="ti ti-link"></i> لینک کانفیگ (VLESS)</div>
         <div class="vless-link" id="vless-link">{new_vless_link}</div>
     </div>
-    <div class="warning-box">{warning_config}</div>
     <div class="actions">
         <button class="btn btn-primary" onclick="copyVless()"><i class="ti ti-copy"></i> کپی لینک</button>
         <button class="btn btn-success" onclick="copySub()"><i class="ti ti-link"></i> کپی ساب‌لینک</button>
         <button class="btn btn-secondary" onclick="showQR()"><i class="ti ti-qrcode"></i> QR</button>
     </div>
-    <div class="footer"><span class="eagle">🔥</span> پنل عقاب · کاملاً رایگان · فروش ممنوع</div>
+    <div class="footer"><span class="eagle">🔥</span> پنل عقاب</div>
 </div>
 <script>
 const vless = `{new_vless_link}`;
