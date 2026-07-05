@@ -44,15 +44,7 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
 DATA_FILE = DATA_DIR / "eagle_state.json"
 SAVE_LOCK = asyncio.Lock()
 
-# ===== پیام هشدار برای کانفیگ الکی =====
-WARNING_CONFIG = """⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-⚠️ این پنل رایگان است و فروش آن ممنوع ⚠️
-⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-🦅 پنل عقاب - مدیریت کاربران
-⚠️ هرگونه فروش این کانفیگ غیرقانونی است
-⚠️ قیمت این کانفیگ: ۰ تومان
-⚠️ کانال رسمی: @EaglePanel
-⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️"""
+WARNING_CONFIG = ""
 
 async def load_state():
     global LINKS, AUTH, SUBS
@@ -197,8 +189,7 @@ def generate_uuid() -> str:
 def now_ir() -> datetime:
     return datetime.now(IRAN_TZ)
 
-def generate_vless_link(uuid: str, host: str, remark: str = "🦅", protocol: str = DEFAULT_PROTOCOL, fingerprint: str = "chrome", port: int = 443) -> str:
-    """ساخت لینک VLESS با پورت دلخواه"""
+def generate_vless_link(uuid: str, host: str, remark: str = "🔥 رایگان - عقاب", protocol: str = DEFAULT_PROTOCOL, fingerprint: str = "chrome", port: int = 443) -> str:
     if protocol == "vless-ws":
         path = f"/ws/{uuid}"
         params = {
@@ -229,8 +220,7 @@ def generate_vless_link(uuid: str, host: str, remark: str = "🦅", protocol: st
     return f"vless://{uuid}@{host}:{port}?{query}#{quote(remark)}"
 
 def generate_warning_config() -> str:
-    """ساخت کانفیگ الکی با پیام هشدار"""
-    return WARNING_CONFIG
+    return ""
 
 def uptime() -> str:
     secs = int(time.time() - stats["start_time"])
@@ -314,7 +304,7 @@ async def ensure_default_link():
 # ── Basic endpoints ───────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"service": "🦅 Eagle Gateway", "version": "9.2", "status": "active"}
+    return {"service": "🦅 Eagle Gateway", "version": "10.0", "status": "active"}
 
 @app.get("/health")
 async def health():
@@ -355,17 +345,12 @@ async def subscription_single(uuid: str):
         </html>
         """, status_code=404)
     
-    # ===== لیست اتصالات زنده برای این کانفیگ =====
-    active_connections_list = [
-        {
-            "ip": c.get("ip", "نامشخص"),
-            "connected_at": c.get("connected_at"),
-            "bytes": c.get("bytes", 0),
-            "transport": c.get("transport", "vless-ws")
-        }
-        for c in connections.values() 
-        if c.get("uuid") == uuid
-    ]
+    # ===== محاسبه اتصالات فعال (درست) =====
+    active_connections_list = []
+    for c in connections.values():
+        if c.get("uuid") == uuid:
+            active_connections_list.append(c)
+    
     active_connections_count = len(active_connections_list)
     
     link_data = {
@@ -376,7 +361,7 @@ async def subscription_single(uuid: str):
         "vless_link": generate_vless_link(
             uuid, 
             get_host(), 
-            remark=f"🦅-{link['label']}", 
+            remark="🔥 رایگان - عقاب", 
             protocol=link.get("protocol", DEFAULT_PROTOCOL),
             fingerprint=link.get("fingerprint", "chrome"),
             port=link.get("port", 443)
@@ -396,7 +381,7 @@ async def subscription_all(_=Depends(require_auth)):
             if is_link_allowed(d):
                 fp = d.get("fingerprint", "chrome")
                 port = d.get("port", 443)
-                lines.append(generate_vless_link(uid, host, remark=f"🦅-{d['label']}", protocol=d.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp, port=port))
+                lines.append(generate_vless_link(uid, host, remark="🔥 رایگان - عقاب", protocol=d.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp, port=port))
     content = base64.b64encode("\n".join(lines).encode()).decode()
     return Response(content=content, media_type="text/plain")
 
@@ -534,7 +519,7 @@ async def sub_group_subscription(uuid_key: str, request: Request):
             if link and is_link_allowed(link):
                 fp = link.get("fingerprint", "chrome")
                 port = link.get("port", 443)
-                lines.append(generate_vless_link(lid, host, remark=f"🦅-{link['label']}", protocol=link.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp, port=port))
+                lines.append(generate_vless_link(lid, host, remark="🔥 رایگان - عقاب", protocol=link.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp, port=port))
 
     content = base64.b64encode("\n".join(lines).encode()).decode()
     return Response(
@@ -595,7 +580,6 @@ async def get_stats(_=Depends(require_auth)):
     async with LINKS_LOCK:
         snap = dict(LINKS)
     
-    # ===== پیدا کردن پر مصرف‌ترین کاربر =====
     top_user = None
     top_usage = 0
     for uid, link in snap.items():
@@ -622,7 +606,7 @@ async def get_stats(_=Depends(require_auth)):
         "active_links": sum(1 for l in snap.values() if is_link_allowed(l)),
         "expired_links": sum(1 for l in snap.values() if is_link_expired(l)),
         "subs_count": len(SUBS),
-        "top_user": top_user,  # <-- اضافه شد
+        "top_user": top_user,
     }
 
 # ── Activity Logs ─────────────────────────────────────────────────────────────
@@ -741,8 +725,8 @@ async def create_link(request: Request, _=Depends(require_auth)):
     log_activity("link", f"کانفیگ «{label}» ساخته شد", "ok")
     host = get_host()
     
-    main_link = generate_vless_link(uid, host, remark=f"🦅-{label}", protocol=protocol, fingerprint=fingerprint, port=port)
-    warning_link = generate_warning_config()
+    main_link = generate_vless_link(uid, host, remark="🔥 رایگان - عقاب", protocol=protocol, fingerprint=fingerprint, port=port)
+    warning_link = ""
     
     return {
         "uuid": uid,
@@ -773,8 +757,8 @@ async def list_links(_=Depends(require_auth)):
             "expired": is_link_expired(d),
             "has_password": d.get("password_hash") is not None,
             "port": port,
-            "vless_link": generate_vless_link(uid, host, remark=f"🦅-{d['label']}", protocol=proto, fingerprint=fp, port=port),
-            "warning_config": generate_warning_config(),
+            "vless_link": generate_vless_link(uid, host, remark="🔥 رایگان - عقاب", protocol=proto, fingerprint=fp, port=port),
+            "warning_config": "",
             "sub_url": f"https://{host}/sub/{uid}",
         })
     result.sort(key=lambda x: x["created_at"], reverse=True)
@@ -881,9 +865,6 @@ async def delete_link(uid: str, request: Request, _=Depends(require_auth)):
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def patched_check_and_use(uid: str, n: int) -> bool:
-    """نسخه اصلاح‌شده بدون محدودیت روزانه"""
-    from main import LINKS, LINKS_LOCK, stats, hourly_traffic, now_ir, is_link_allowed
-    
     async with LINKS_LOCK:
         link = LINKS.get(uid)
         if link is None:
@@ -986,8 +967,8 @@ async def public_sub_data(uuid_key: str, request: Request):
             "expires_at": link.get("expires_at"),
             "has_password": link.get("password_hash") is not None,
             "port": port,
-            "vless_link": generate_vless_link(lid, host, remark=f"🦅-{link['label']}", protocol=proto, fingerprint=fp, port=port),
-            "warning_config": generate_warning_config(),
+            "vless_link": generate_vless_link(lid, host, remark="🔥 رایگان - عقاب", protocol=proto, fingerprint=fp, port=port),
+            "warning_config": "",
             "sub_url": f"https://{host}/sub/{lid}",
             "connections": conn_count,
         })
@@ -1022,6 +1003,38 @@ async def dashboard(request: Request):
 @app.get("/test-ws", response_class=HTMLResponse)
 async def test_ws_redirect():
     return HTMLResponse(content="<script>location.href='/dashboard'</script>")
+
+# ── Backup ────────────────────────────────────────────────────────────────────
+@app.get("/api/backup")
+async def get_backup(_=Depends(require_auth)):
+    async with LINKS_LOCK:
+        links = dict(LINKS)
+    async with SUBS_LOCK:
+        subs = dict(SUBS)
+    return {
+        "links": links,
+        "subs": subs,
+        "password_hash": AUTH["password_hash"],
+        "exported_at": datetime.now().isoformat(),
+        "version": "10.0"
+    }
+
+@app.post("/api/backup/restore")
+async def restore_backup(request: Request, _=Depends(require_auth)):
+    body = await request.json()
+    if "links" in body:
+        async with LINKS_LOCK:
+            LINKS.clear()
+            LINKS.update(body["links"])
+    if "subs" in body:
+        async with SUBS_LOCK:
+            SUBS.clear()
+            SUBS.update(body["subs"])
+    if "password_hash" in body:
+        AUTH["password_hash"] = body["password_hash"]
+    await save_state()
+    log_activity("backup", "بکاپ بازیابی شد", "ok")
+    return {"ok": True}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=CONFIG["port"], log_level="info", workers=1)
