@@ -1,4 +1,4 @@
-# pages.py - پنل عقاب (نسخه کامل با بخش پشتیبانی)
+# pages.py - پنل عقاب (نسخه کامل نهایی با داشبورد جدید)
 
 LOGIN_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -52,8 +52,6 @@ input:focus+.ic{color:#818CF8}
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(79,70,229,.4)}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .footer{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;color:var(--dim)}
-.footer a{color:#818CF8;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:4px;transition:.3s}
-.footer a:hover{color:#EC4899;text-shadow:0 0 20px rgba(236,72,153,0.2)}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -130,9 +128,6 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 @keyframes bgGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 html,body{height:100%}
 body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#06060f,#0a0a18,#12122a);background-size:300% 300%;animation:bgGradient 20s ease infinite;color:var(--t1);min-height:100vh;display:flex;font-size:14px;transition:background .3s,color .3s}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--accent),var(--pink));border-radius:3px}
 .glow-orb{position:fixed;border-radius:50%;filter:blur(150px);z-index:0;animation:orbFloat 15s ease-in-out infinite;pointer-events:none}
 .orb1{width:500px;height:500px;background:rgba(79,70,229,0.04);top:-200px;right:-150px}
 .orb2{width:350px;height:350px;background:rgba(236,72,153,0.03);bottom:-120px;left:-100px;animation-delay:7s}
@@ -171,10 +166,10 @@ body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#06060
 .pg{display:none;animation:pageIn .35s ease}
 .pg.on{display:block}
 @keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.tb-title{font-size:22px;font-weight:800;color:var(--t1);display:flex;align-items:center;gap:10px;letter-spacing:-.02em}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.tb-title{font-size:22px;font-weight:800;color:var(--t1);display:flex;align-items:center;gap:10px}
 .tb-title i{background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:24px}
-.tb-sub{font-size:11px;color:var(--t3);margin-top:4px}
+.tb-sub{font-size:12px;color:var(--t3);margin-top:2px}
 .tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .badge{font-size:10px;padding:4px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .bg-green{background:var(--green-bg);color:var(--green-t)}
@@ -186,43 +181,19 @@ body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#06060
 .dg{background:var(--green)}.dr{background:var(--red)}.da{background:var(--amber)}.db{background:var(--accent)}
 .pulse{animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.metric{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:18px 20px;transition:all .3s;position:relative;overflow:hidden;cursor:default}
-.metric::after{content:'';position:absolute;top:0;right:0;width:3px;height:100%;background:linear-gradient(180deg,var(--accent),var(--pink));opacity:0;transition:.3s}
-.metric:hover{border-color:var(--card-bh);transform:translateY(-3px);box-shadow:var(--shadow)}
-.metric:hover::after{opacity:1}
-.m-label{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.m-val{font-size:26px;font-weight:800;color:var(--t1);line-height:1;letter-spacing:-.02em}
-.m-sub{font-size:10px;color:var(--t3);margin-top:6px}
-.metric .m-icon{font-size:22px;margin-bottom:8px;display:block;background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 
-.btn{font-family:inherit;font-size:11.5px;font-weight:600;border-radius:10px;padding:8px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;transition:all .2s;white-space:nowrap;position:relative;overflow:hidden}
-.btn i{font-size:13px}
-.btn-p{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;box-shadow:0 4px 20px rgba(79,70,229,.2)}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(79,70,229,.35)}
-.btn-o{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--card-b);color:var(--t2)}
-.btn-o:hover{background:var(--accent-d);border-color:rgba(79,70,229,.2)}
-.btn-d{background:var(--red-bg);color:var(--red-t);border:1px solid rgba(239,68,68,.2)}
-.btn-d:hover{background:rgba(239,68,68,.2)}
-.btn-pur{background:var(--purple-bg);color:#A78BFA;border:1px solid rgba(139,92,246,.2)}
-.btn-pur:hover{background:rgba(139,92,246,.22)}
-.btn-amber{background:var(--amber-bg);color:var(--amber-t);border:1px solid rgba(245,158,11,0.2)}
-.btn-amber:hover{background:rgba(245,158,11,0.22)}
-.btn-sm{padding:5px 10px;font-size:10px;border-radius:8px}
-.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:8px}
+/* ===== کارت‌های آماری جدید ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:18px 16px;transition:all .3s;text-align:center;position:relative;overflow:hidden}
+.stat-card:hover{border-color:var(--card-bh);transform:translateY(-3px);box-shadow:var(--shadow)}
+.stat-card .icon{font-size:28px;margin-bottom:6px;display:block}
+.stat-card .number{font-size:28px;font-weight:800;color:var(--t1);line-height:1.2}
+.stat-card .label{font-size:11px;color:var(--t3);margin-top:4px;font-weight:500}
+.stat-card .sub{font-size:9px;color:var(--t3);margin-top:2px;opacity:.6}
+.stat-card .bar{position:absolute;bottom:0;right:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--pink));opacity:0;transition:.3s}
+.stat-card:hover .bar{opacity:1}
 
-.card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:20px 22px;transition:border-color .3s,box-shadow .3s}
-.card:hover{border-color:var(--card-bh);box-shadow:var(--shadow)}
-.card-title{font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.card-title i{font-size:16px;background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-
-.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.fg label{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:4px}
-.fi{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--card-b);background:rgba(0,0,0,.2);color:var(--t1);font-family:inherit;font-size:12px;outline:none;transition:.2s}
-.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.08);background:rgba(0,0,0,.3)}
-.fi::placeholder{color:var(--t3)}
-select.fi{appearance:none;cursor:pointer}
-
+/* ===== کاربران ===== */
 .user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
 .user-card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:var(--radius);padding:18px 20px;transition:all .3s;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .user-card::before{content:'';position:absolute;top:-50%;right:-50%;width:200px;height:200px;background:radial-gradient(circle,rgba(79,70,229,0.03),transparent 70%);pointer-events:none}
@@ -243,6 +214,20 @@ select.fi{appearance:none;cursor:pointer}
 .empty{text-align:center;padding:50px 20px;color:var(--t3)}
 .empty i{font-size:38px;opacity:.3;display:block;margin-bottom:12px}
 
+.btn{font-family:inherit;font-size:11.5px;font-weight:600;border-radius:10px;padding:8px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;transition:all .2s;white-space:nowrap}
+.btn i{font-size:13px}
+.btn-p{background:linear-gradient(135deg,var(--accent),var(--pink));color:#fff;box-shadow:0 4px 20px rgba(79,70,229,.2)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(79,70,229,.35)}
+.btn-o{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--card-b);color:var(--t2)}
+.btn-o:hover{background:var(--accent-d);border-color:rgba(79,70,229,.2)}
+.btn-d{background:var(--red-bg);color:var(--red-t);border:1px solid rgba(239,68,68,.2)}
+.btn-d:hover{background:rgba(239,68,68,.2)}
+.btn-pur{background:var(--purple-bg);color:#A78BFA;border:1px solid rgba(139,92,246,.2)}
+.btn-pur:hover{background:rgba(139,92,246,.22)}
+.btn-amber{background:var(--amber-bg);color:var(--amber-t);border:1px solid rgba(245,158,11,0.2)}
+.btn-amber:hover{background:rgba(245,158,11,0.22)}
+.btn-sm{padding:5px 10px;font-size:10px;border-radius:8px}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(50px);background:var(--card);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid var(--card-b);color:var(--t1);border-radius:12px;padding:12px 22px;font-size:12.5px;opacity:0;transition:all .3s;z-index:999;pointer-events:none;box-shadow:var(--shadow);white-space:nowrap;display:flex;align-items:center;gap:8px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.ok{border-color:rgba(16,185,129,.3);background:var(--green-bg);color:var(--green-t)}
@@ -255,6 +240,12 @@ select.fi{appearance:none;cursor:pointer}
 .modal-close:hover{background:var(--red-bg);color:var(--red-t);transform:rotate(90deg)}
 .modal-title{font-size:16px;font-weight:700;color:var(--t1);margin-bottom:20px;display:flex;align-items:center;gap:8px}
 .modal-title i{background:linear-gradient(135deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:18px}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg label{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:4px}
+.fi{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--card-b);background:rgba(0,0,0,.2);color:var(--t1);font-family:inherit;font-size:12px;outline:none;transition:.2s}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.08);background:rgba(0,0,0,.3)}
+.fi::placeholder{color:var(--t3)}
+select.fi{appearance:none;cursor:pointer}
 
 .conn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .conn-card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--card-b);border-radius:14px;padding:14px 16px;transition:.2s}
@@ -264,15 +255,17 @@ select.fi{appearance:none;cursor:pointer}
 .conn-card .conn-info{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--t2);gap:6px;flex-wrap:wrap}
 .conn-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;margin-right:3px}
 
-@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
   .sidebar{transform:translateX(100%)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-right:0;padding-top:70px}
   .mob-top{display:flex}
   .user-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
 }
-@media(max-width:500px){.metrics{grid-template-columns:1fr}.main{padding:64px 12px 30px}}
+@media(max-width:500px){.stats-grid{grid-template-columns:1fr}.main{padding:64px 12px 30px}}
 </style>
 </head>
 <body>
@@ -310,7 +303,7 @@ select.fi{appearance:none;cursor:pointer}
 <aside class="sidebar" id="sb">
   <div class="logo"><div class="logo-icon">🦅</div><div><div class="logo-name">پنل عقاب</div><div class="logo-sub">مدیریت کاربران</div></div></div>
   <div class="nav-wrap">
-    <div class="nav-it on" data-pg="users"><i class="ti ti-users"></i> کاربران</div>
+    <div class="nav-it on" data-pg="users"><i class="ti ti-layout-dashboard"></i> داشبورد</div>
     <div class="nav-it" data-pg="connections"><i class="ti ti-plug-connected"></i> اتصالات زنده</div>
     <div class="nav-it" data-pg="support"><i class="ti ti-headset"></i> پشتیبانی</div>
   </div>
@@ -325,16 +318,59 @@ select.fi{appearance:none;cursor:pointer}
 <main class="main">
 <section class="pg on" id="pg-users">
   <div class="topbar">
-    <div><div class="tb-title"><i class="ti ti-users"></i> کاربران</div><div class="tb-sub" id="user-count">۰ کاربر</div></div>
-    <div class="tb-right"><span class="badge bg-green" id="online-badge"><span class="dot dg"></span> ۰ آنلاین</span><button class="btn btn-p" onclick="openModal('modal-user')"><i class="ti ti-plus"></i> کانفیگ جدید</button></div>
+    <div>
+      <div class="tb-title"><i class="ti ti-layout-dashboard"></i> داشبورد عقاب</div>
+      <div class="tb-sub" id="last-update">آخرین بروزرسانی: لحظه‌ای</div>
+    </div>
+    <div class="tb-right">
+      <span class="badge bg-green" id="online-badge"><span class="dot dg"></span> ۰ آنلاین</span>
+      <button class="btn btn-p" onclick="openModal('modal-user')"><i class="ti ti-plus"></i> کانفیگ جدید</button>
+    </div>
   </div>
-  <div class="metrics">
-    <div class="metric"><div class="m-icon">👥</div><div class="m-label">کل کاربران</div><div class="m-val" id="total-users">۰</div></div>
-    <div class="metric"><div class="m-icon">🟢</div><div class="m-label">آنلاین</div><div class="m-val" id="online-count">۰</div></div>
-    <div class="metric"><div class="m-icon">📊</div><div class="m-label">مصرف کل</div><div class="m-val" id="total-usage">۰ GB</div></div>
-    <div class="metric"><div class="m-icon">⛔</div><div class="m-label">غیرفعال</div><div class="m-val" id="inactive-count">۰</div></div>
+
+  <!-- ===== کارت‌های آماری ===== -->
+  <div class="stats-grid">
+    <div class="stat-card green">
+      <span class="icon">🟢</span>
+      <div class="number" id="online-count">۰</div>
+      <div class="label">سرویس‌های آنلاین</div>
+      <div class="sub">در حال اتصال</div>
+      <div class="bar"></div>
+    </div>
+    <div class="stat-card blue">
+      <span class="icon">👥</span>
+      <div class="number" id="total-users">۰</div>
+      <div class="label">کل کاربران</div>
+      <div class="sub">ثبت‌شده</div>
+      <div class="bar"></div>
+    </div>
+    <div class="stat-card purple">
+      <span class="icon">📊</span>
+      <div class="number" id="total-usage">۰</div>
+      <div class="label">مصرف کل</div>
+      <div class="sub">مگابایت</div>
+      <div class="bar"></div>
+    </div>
+    <div class="stat-card pink">
+      <span class="icon">📱</span>
+      <div class="number" id="active-devices">۰</div>
+      <div class="label">دستگاه‌های فعال</div>
+      <div class="sub">متصل</div>
+      <div class="bar"></div>
+    </div>
+    <div class="stat-card amber">
+      <span class="icon">⛔</span>
+      <div class="number" id="inactive-count">۰</div>
+      <div class="label">غیرفعال</div>
+      <div class="sub">غیرفعال</div>
+      <div class="bar"></div>
+    </div>
   </div>
-  <div id="users-grid" class="user-grid"><div class="empty"><i class="ti ti-users"></i><p>هیچ کاربری ساخته نشده</p></div></div>
+
+  <!-- ===== لیست کاربران ===== -->
+  <div id="users-grid" class="user-grid">
+    <div class="empty"><i class="ti ti-users"></i><p>هیچ کاربری ساخته نشده</p></div>
+  </div>
 </section>
 
 <section class="pg" id="pg-connections">
@@ -345,7 +381,6 @@ select.fi{appearance:none;cursor:pointer}
 <!-- ===== بخش پشتیبانی ===== -->
 <section class="pg" id="pg-support">
   <div class="topbar"><div><div class="tb-title"><i class="ti ti-headset"></i> پشتیبانی</div><div class="tb-sub">راهنمایی و پشتیبانی سریع</div></div></div>
-  
   <div class="card" style="max-width:600px">
     <div class="card-title"><i class="ti ti-messages"></i> ارتباط با پشتیبانی</div>
     <p style="font-size:13px;color:var(--t2);line-height:1.9;margin-bottom:16px">
@@ -364,20 +399,6 @@ select.fi{appearance:none;cursor:pointer}
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--card-b);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span class="badge bg-green"><span class="dot dg"></span> آنلاین</span>
       <span style="font-size:11px;color:var(--t3)">گروه پشتیبانی عقاب · پاسخگویی سریع</span>
-    </div>
-  </div>
-  
-  <div class="card" style="max-width:600px;margin-top:14px">
-    <div class="card-title"><i class="ti ti-info-circle"></i> اطلاعات تماس</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div style="background:var(--accent-d);border-radius:10px;padding:12px 14px">
-        <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">گروه تلگرام</div>
-        <a href="https://t.me/+QyEVU0FquFczYjQ0" target="_blank" style="color:var(--accent2);text-decoration:none;font-weight:600;font-size:13px">@ARG_PANEL</a>
-      </div>
-      <div style="background:var(--pink-bg);border-radius:10px;padding:12px 14px">
-        <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">وضعیت</div>
-        <span style="color:var(--green-t);font-weight:600;font-size:13px;display:flex;align-items:center;gap:4px"><span class="dot dg"></span> فعال</span>
-      </div>
     </div>
   </div>
 </section>
@@ -473,12 +494,14 @@ async function loadUsers() {
     const online = links.filter(l => l.active && !l.expired).length;
     const inactive = links.filter(l => !l.active || l.expired).length;
     const totalBytes = links.reduce((sum, l) => sum + (l.used_bytes || 0), 0);
+    const devices = links.reduce((sum, l) => sum + (l.max_devices || 0), 0);
     
     document.getElementById('total-users').textContent = total;
     document.getElementById('online-count').textContent = online;
     document.getElementById('inactive-count').textContent = inactive;
-    document.getElementById('total-usage').textContent = fmtB(totalBytes);
-    document.getElementById('user-count').textContent = total + ' کاربر';
+    document.getElementById('total-usage').textContent = (totalBytes / (1024*1024)).toFixed(1);
+    document.getElementById('active-devices').textContent = devices;
+    document.getElementById('last-update').textContent = 'آخرین بروزرسانی: ' + new Date().toLocaleTimeString('fa-IR');
     document.getElementById('online-badge').innerHTML = '<span class="dot dg"></span> ' + online + ' آنلاین';
     
     if (!links.length) {
@@ -498,7 +521,7 @@ async function loadUsers() {
       return `<div class="user-card">
         <div class="head">
           <div class="name">🦅 ${esc(l.label)}</div>
-          <span class="status ${active ? 'on' : 'off'}">${active ? '● آنلاین' : '● آفلاین'}</span>
+          <span class="status ${active ? 'on' : 'off'}">${active ? '🟢 آنلاین' : '🔴 آفلاین'}</span>
         </div>
         <div class="uuid">🔑 ${esc(l.uuid)}</div>
         <div class="info">
@@ -507,7 +530,7 @@ async function loadUsers() {
           <span>📅 ${l.expires_at ? new Date(l.expires_at).toLocaleDateString('fa-IR') : 'نامحدود'}</span>
         </div>
         <div class="quota-info">
-          <span>📊 مصرف شده: ${fmtB(l.used_bytes)}</span>
+          <span>📊 مصرف: ${fmtB(l.used_bytes)}</span>
           <span>📦 کل: ${l.limit_bytes === 0 ? '∞' : fmtB(l.limit_bytes)}</span>
         </div>
         <div class="quota-bar">
