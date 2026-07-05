@@ -1,4 +1,4 @@
-# pages.py - پنل عقاب (نسخه کامل با تم سفید/بنفش و رمز کانفیگ)
+# pages.py - پنل عقاب (نسخه کامل با پورت و اخطار)
 
 LOGIN_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -217,6 +217,7 @@ body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#0a0a1
 .user-card .actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .user-card .actions .btn{flex:1;justify-content:center;min-width:fit-content;font-size:10px}
 .user-card .lock-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--amber-t);background:var(--amber-bg);padding:2px 8px;border-radius:10px;border:1px solid rgba(245,158,11,0.15)}
+.user-card .warning-box{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.12);border-radius:6px;padding:5px 8px;margin-top:6px;font-size:7.5px;color:var(--red-t);font-family:monospace;white-space:pre-wrap;max-height:50px;overflow-y:auto;direction:ltr;text-align:left;line-height:1.4}
 
 .empty{text-align:center;padding:50px 20px;color:var(--t3)}
 .empty i{font-size:38px;opacity:.3;display:block;margin-bottom:12px}
@@ -301,7 +302,14 @@ select.fi{appearance:none;cursor:pointer}
     
     <div class="fg"><label><i class="ti ti-settings"></i> پروتکل</label><select class="fi" id="user-protocol"><option value="vless-ws">VLESS (WebSocket)</option><option value="xhttp-stream-up">XHTTP (Stream)</option></select></div>
     
-    <!-- ===== رمز محافظت از کانفیگ ===== -->
+    <!-- ===== پورت دلخواه ===== -->
+    <div class="fg">
+      <label><i class="ti ti-plug"></i> پورت (پیش‌فرض: 443)</label>
+      <input class="fi" id="user-port" type="number" min="1" max="65535" value="443" placeholder="443">
+      <span style="font-size:9px;color:var(--t3);margin-top:2px">💡 پورت دلخواه خود را وارد کنید (۱ تا ۶۵۵۳۵)</span>
+    </div>
+    
+    <!-- ===== رمز محافظت ===== -->
     <div class="fg">
       <label><i class="ti ti-lock"></i> رمز کانفیگ (اختیاری)</label>
       <input class="fi" id="user-password" type="password" placeholder="برای حذف/ویرایش نیاز است" dir="ltr">
@@ -315,14 +323,13 @@ select.fi{appearance:none;cursor:pointer}
   </div>
 </div>
 
-<!-- ===== مودال ویرایش کانفیگ ===== -->
+<!-- ===== مودال ویرایش ===== -->
 <div class="modal-bg" id="modal-edit">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-edit')"><i class="ti ti-x"></i></button>
     <div class="modal-title"><i class="ti ti-edit"></i> 🦅 ویرایش کانفیگ</div>
     <input type="hidden" id="edit-uuid">
     
-    <!-- ===== ورود رمز برای ویرایش ===== -->
     <div class="fg" id="edit-password-section">
       <label><i class="ti ti-lock"></i> 🔑 رمز کانفیگ (برای ویرایش لازم است)</label>
       <input class="fi" id="edit-password" type="password" placeholder="رمز کانفیگ را وارد کنید" dir="ltr">
@@ -357,6 +364,11 @@ select.fi{appearance:none;cursor:pointer}
       </div>
     </div>
     
+    <div class="fg">
+      <label><i class="ti ti-plug"></i> پورت</label>
+      <input class="fi" id="edit-port" type="number" min="1" max="65535" placeholder="443">
+    </div>
+    
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-p" onclick="saveEdit()" style="flex:2"><i class="ti ti-check"></i> ذخیره تغییرات</button>
       <button class="btn btn-o" onclick="closeModal('modal-edit')" style="flex:1">انصراف</button>
@@ -364,7 +376,7 @@ select.fi{appearance:none;cursor:pointer}
   </div>
 </div>
 
-<!-- ===== مودال حذف با رمز ===== -->
+<!-- ===== مودال حذف ===== -->
 <div class="modal-bg" id="modal-delete">
   <div class="modal" style="max-width:400px">
     <button class="modal-close" onclick="closeModal('modal-delete')"><i class="ti ti-x"></i></button>
@@ -560,6 +572,8 @@ async function loadUsers() {
       const fp = l.fingerprint || 'chrome';
       const subLink = `https://${host}/sub/${l.uuid}`;
       const hasPassword = l.has_password === true;
+      const port = l.port || 443;
+      const warningText = l.warning_config || '⚠️ این پنل رایگان است و فروش آن ممنوع';
       
       return `<div class="user-card">
         <div class="head">
@@ -571,6 +585,7 @@ async function loadUsers() {
           <span>📱 ${devices === 0 ? '∞' : devices + ' دستگاه'}</span>
           <span>🔑 ${esc(fp)}</span>
           <span>📅 ${l.expires_at ? new Date(l.expires_at).toLocaleDateString('fa-IR') : 'نامحدود'}</span>
+          <span>🔌 ${port}</span>
         </div>
         <div class="quota-info">
           <span>📊 مصرف: ${fmtB(l.used_bytes)}</span>
@@ -579,6 +594,7 @@ async function loadUsers() {
         <div class="quota-bar">
           <div class="quota-fill" style="width: ${pct}%; background: ${bc}"></div>
         </div>
+        <div class="warning-box">${esc(warningText)}</div>
         <div class="actions">
           <button class="btn btn-sm btn-o" onclick="navigator.clipboard.writeText('${esc(l.vless_link)}').then(()=>toast('لینک کپی شد','ok'))"><i class="ti ti-copy"></i> لینک</button>
           <button class="btn btn-sm btn-pur" onclick="navigator.clipboard.writeText('${esc(subLink)}').then(()=>toast('ساب‌لینک کپی شد','ok'))"><i class="ti ti-link"></i> ساب</button>
@@ -625,8 +641,8 @@ async function openEditModal(uuid) {
         document.getElementById('edit-devices').value = link.max_devices || 0;
         document.getElementById('edit-protocol').value = link.protocol || 'vless-ws';
         document.getElementById('edit-status').value = link.active ? 'true' : 'false';
+        document.getElementById('edit-port').value = link.port || 443;
         
-        // اگر کانفیگ رمز دارد، بخش رمز رو نشون بده
         if (link.has_password) {
             document.getElementById('edit-password-section').style.display = 'block';
         } else {
@@ -651,6 +667,7 @@ async function saveEdit() {
     const devices = parseInt(document.getElementById('edit-devices').value) || 0;
     const protocol = document.getElementById('edit-protocol').value || 'vless-ws';
     const active = document.getElementById('edit-status').value === 'true';
+    const port = parseInt(document.getElementById('edit-port').value) || 443;
     
     try {
         const r = await authF('/api/links/' + uuid, {
@@ -665,7 +682,8 @@ async function saveEdit() {
                 max_devices: devices,
                 protocol: protocol,
                 active: active,
-                password: password
+                password: password,
+                port: port
             })
         });
         
@@ -734,6 +752,7 @@ async function saveUser() {
   const devices = parseInt(document.getElementById('user-devices').value) || 0;
   const protocol = document.getElementById('user-protocol').value || 'vless-ws';
   const password = document.getElementById('user-password').value.trim();
+  const port = parseInt(document.getElementById('user-port').value) || 443;
   
   try {
     const r = await authF('/api/links', {
@@ -748,7 +767,8 @@ async function saveUser() {
         max_devices: devices,
         protocol: protocol,
         note: '',
-        password: password
+        password: password,
+        port: port
       })
     });
     if (!r.ok) throw new Error();
@@ -761,6 +781,7 @@ async function saveUser() {
     document.getElementById('user-devices').value = '1';
     document.getElementById('user-protocol').value = 'vless-ws';
     document.getElementById('user-password').value = '';
+    document.getElementById('user-port').value = '443';
     
     closeModal('modal-user');
     toast('🦅 کانفیگ ساخته شد ✓', 'ok');
@@ -846,6 +867,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
     fingerprint = link.get('fingerprint', 'chrome')
     max_devices = link.get('max_devices', 0)
     protocol = link.get('protocol', 'vless-ws')
+    port = link.get('port', 443)
     
     percent = 0
     if limit > 0:
@@ -867,6 +889,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
     is_allowed = active and not expired
     vless_link = link.get('vless_link', '')
     sub_url = link.get('sub_url', '')
+    warning_config = link.get('warning_config', '⚠️ این پنل رایگان است و فروش آن ممنوع')
     
     def fmt_bytes(b):
         if not b or b == 0:
@@ -1024,6 +1047,20 @@ body{{
     background:rgba(0,0,0,0.2);padding:10px 12px;
     border-radius:8px;border:1px solid rgba(139,92,246,0.06);
 }}
+.warning-box{{
+    background:rgba(239,68,68,0.06);
+    border:1px solid rgba(239,68,68,0.1);
+    border-radius:8px;
+    padding:8px 10px;
+    margin-top:12px;
+    font-size:8px;
+    color:#F87171;
+    font-family:monospace;
+    white-space:pre-wrap;
+    text-align:left;
+    direction:ltr;
+    line-height:1.4;
+}}
 .actions{{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}}
 .btn{{
     font-family:inherit;font-size:12px;font-weight:600;
@@ -1102,6 +1139,7 @@ body{{
         <div class="info-item"><span class="info-label"><i class="ti ti-devices"></i> دستگاه‌ها</span><span class="info-value">{max_devices if max_devices > 0 else '∞'}</span></div>
         <div class="info-item"><span class="info-label"><i class="ti ti-fingerprint"></i> فینگرپرینت</span><span class="info-value proto">{fingerprint}</span></div>
         <div class="info-item"><span class="info-label"><i class="ti ti-settings"></i> پروتکل</span><span class="info-value proto">{protocol}</span></div>
+        <div class="info-item"><span class="info-label"><i class="ti ti-plug"></i> پورت</span><span class="info-value proto">{port}</span></div>
     </div>
     <div class="progress">
         <div class="progress-bar"><div class="progress-fill" style="width:{percent:.1f}%"></div></div>
@@ -1111,6 +1149,7 @@ body{{
         <div class="vless-label"><i class="ti ti-link"></i> لینک کانفیگ (VLESS)</div>
         <div class="vless-link" id="vless-link">{vless_link}</div>
     </div>
+    <div class="warning-box">{warning_config}</div>
     <div class="actions">
         <button class="btn btn-primary" onclick="copyVless()"><i class="ti ti-copy"></i> کپی لینک</button>
         <button class="btn btn-success" onclick="copySub()"><i class="ti ti-link"></i> کپی ساب‌لینک</button>
