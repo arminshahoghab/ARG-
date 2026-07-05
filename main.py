@@ -328,19 +328,257 @@ async def health():
 
 # ── Subscription ──────────────────────────────────────────────────────────────
 @app.get("/sub/{uuid}")
-async def subscription_single(uuid: str):
-    import base64
+async def subscription_single(uuid: str, request: Request):
+    """ساب‌لینک اختصاصی هر کاربر با نمایش اطلاعات در صفحه"""
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
-    if not link or not is_link_allowed(link):
-        raise HTTPException(status_code=404, detail="not found or inactive")
-    host = get_host()
-    proto = link.get("protocol", DEFAULT_PROTOCOL)
-    fp = link.get("fingerprint", "chrome")
-    vless = generate_vless_link(uuid, host, remark=f"ARG-{link['label']}", protocol=proto, fingerprint=fp)
-    content = base64.b64encode(vless.encode()).decode()
-    return Response(content=content, media_type="text/plain",
-                    headers={"profile-title": quote(link["label"])})
+    
+    if not link:
+        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px;color:#F87171'>❌ کاربر یافت نشد</h2>", status_code=404)
+    
+    # محاسبه اطلاعات
+    used = link.get('used_bytes', 0)
+    limit = link.get('limit_bytes', 0)
+    active = link.get('active', True)
+    expired = is_link_expired(link)
+    
+    percent = 0
+    if limit > 0:
+        percent = min(100, (used / limit) * 100)
+    
+    expires_at = link.get('expires_at')
+    if expires_at:
+        try:
+            exp_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+            days_left = (exp_date - datetime.now().astimezone()).days
+            if days_left < 0:
+                days_left = 0
+        except:
+            days_left = 'نامشخص'
+    else:
+        days_left = 'نامحدود'
+    
+    label = link.get('label', 'کاربر')
+    is_allowed = active and not expired
+    
+    # صفحه HTML زیبا برای نمایش اطلاعات
+    return HTMLResponse(f"""
+    <!DOCTYPE html>
+    <html lang="fa" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>اطلاعات اشتراک - {label}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: 'Vazirmatn', sans-serif;
+                background: linear-gradient(135deg, #05050f, #0a0a1a, #1a0a2e);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                color: #F0EEFF;
+            }}
+            .card {{
+                background: rgba(255,255,255,0.04);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 24px;
+                padding: 40px 34px;
+                max-width: 420px;
+                width: 100%;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(124,58,237,0.1);
+            }}
+            .header {{
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                margin-bottom: 28px;
+            }}
+            .logo {{
+                width: 48px;
+                height: 48px;
+                border-radius: 14px;
+                background: linear-gradient(135deg, #7C3AED, #EC4899);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                font-weight: 800;
+                color: #fff;
+                flex-shrink: 0;
+            }}
+            .title {{
+                font-size: 18px;
+                font-weight: 800;
+                background: linear-gradient(135deg, #A78BFA, #7C3AED, #EC4899);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }}
+            .subtitle {{
+                font-size: 11px;
+                color: #6B5B8A;
+                -webkit-text-fill-color: #6B5B8A;
+            }}
+            .user-name {{
+                font-size: 22px;
+                font-weight: 800;
+                margin-bottom: 4px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            .status {{
+                display: inline-block;
+                padding: 4px 14px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 600;
+                margin-bottom: 16px;
+            }}
+            .status.active {{
+                background: rgba(16,185,129,0.15);
+                color: #34D399;
+            }}
+            .status.inactive {{
+                background: rgba(239,68,68,0.15);
+                color: #F87171;
+            }}
+            .info-grid {{
+                display: grid;
+                gap: 10px;
+                margin: 20px 0;
+            }}
+            .info-item {{
+                background: rgba(255,255,255,0.03);
+                border: 1px solid rgba(255,255,255,0.05);
+                border-radius: 12px;
+                padding: 14px 16px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }}
+            .info-label {{
+                font-size: 12px;
+                color: #9CA3BF;
+            }}
+            .info-value {{
+                font-size: 14px;
+                font-weight: 700;
+                color: #F0EEFF;
+            }}
+            .info-value.used {{
+                color: #A78BFA;
+            }}
+            .info-value.remain {{
+                color: #34D399;
+            }}
+            .progress {{
+                margin: 16px 0 20px;
+            }}
+            .progress-bar {{
+                height: 6px;
+                border-radius: 4px;
+                background: rgba(255,255,255,0.06);
+                overflow: hidden;
+            }}
+            .progress-fill {{
+                height: 100%;
+                border-radius: 4px;
+                background: linear-gradient(90deg, #7C3AED, #EC4899);
+                width: {percent:.1f}%;
+                transition: width 0.6s ease;
+            }}
+            .progress-text {{
+                display: flex;
+                justify-content: space-between;
+                font-size: 11px;
+                color: #9CA3BF;
+                margin-top: 6px;
+            }}
+            .footer {{
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                text-align: center;
+                font-size: 11px;
+                color: #6B5B8A;
+            }}
+            .uuid-box {{
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255,255,255,0.04);
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 10px;
+                font-family: monospace;
+                color: #6B5B8A;
+                word-break: break-all;
+                margin-top: 8px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <div class="logo">A</div>
+                <div>
+                    <div class="title">پنل ARG</div>
+                    <div class="subtitle">اطلاعات اشتراک</div>
+                </div>
+            </div>
+
+            <div class="user-name">
+                {label}
+            </div>
+            <span class="status {'active' if is_allowed else 'inactive'}">
+                {'✅ فعال' if is_allowed else '❌ غیرفعال'}
+            </span>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">📊 حجم مصرف شده</span>
+                    <span class="info-value used">{fmt_bytes(used)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📦 حجم کل</span>
+                    <span class="info-value">{'نامحدود' if limit == 0 else fmt_bytes(limit)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">⏳ زمان باقیمانده</span>
+                    <span class="info-value">{days_left if days_left == 'نامحدود' else f'{days_left} روز'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📱 دستگاه‌ها</span>
+                    <span class="info-value">{link.get('max_devices', 0) if link.get('max_devices', 0) > 0 else '∞'}</span>
+                </div>
+            </div>
+
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {percent:.1f}%"></div>
+                </div>
+                <div class="progress-text">
+                    <span>مصرف</span>
+                    <span>{percent:.1f}%</span>
+                </div>
+            </div>
+
+            <div class="uuid-box">
+                🔑 {uuid}
+            </div>
+
+            <div class="footer">
+                <span>🔒 اطلاعات شخصی شما محفوظ است</span>
+            </div>
+        </div>
+    </body>
+    </html>
+    """)
 
 @app.get("/sub-all")
 async def subscription_all(_=Depends(require_auth)):
@@ -710,7 +948,7 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
         label = link.get("label")
         if "active" in body:
             link["active"] = bool(body["active"])
-            log_activity("link", f"کانفیگ «{label}» {'فعال' if link['active'] else 'غیرفعال'} شد", "ok" if link["active"] else "warn")
+            log_activity("link", f"کانفیگ «{label}» {'فعال' if link['active'] else 'غیرفعال'} شد", "ok" if link['active'] else "warn")
         if "label" in body:
             link["label"] = str(body["label"])[:60]
         if "note" in body:
