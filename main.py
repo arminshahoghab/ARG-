@@ -23,7 +23,7 @@ logger = logging.getLogger("Eagle-Gateway")
 
 IRAN_TZ = ZoneInfo("Asia/Tehran")
 
-app = FastAPI(title="Eagle Gateway - 🦅", docs_url=None, redoc_url=None)
+app = FastAPI(title="🦅 Eagle Gateway", docs_url=None, redoc_url=None)
 
 CONFIG = {
     "port": int(os.environ.get("PORT", 8000)),
@@ -95,11 +95,10 @@ SUBS: dict = {}
 SUBS_LOCK = asyncio.Lock()
 
 # ===== محدودیت دستگاه =====
-device_connections: dict = {}  # {uuid: [ip1, ip2, ...]}
+device_connections: dict = {}
 DEVICE_CONNECTIONS_LOCK = asyncio.Lock()
 
 async def remove_device_connection(uuid: str, client_ip: str):
-    """حذف اتصال از لیست فعال دستگاه‌ها"""
     async with DEVICE_CONNECTIONS_LOCK:
         if uuid in device_connections:
             if client_ip in device_connections[uuid]:
@@ -305,21 +304,56 @@ async def root():
 async def health():
     return {"status": "ok", "connections": len(connections), "uptime": uptime()}
 
-# ── Subscription ──────────────────────────────────────────────────────────────
+# ── Subscription (صفحه ساب‌لینک عقابی) ─────────────────────────────────────
 @app.get("/sub/{uuid}")
 async def subscription_single(uuid: str):
-    import base64
+    """صفحه نمایش اطلاعات کاربر با طراحی عقابی"""
+    from pages import get_sub_page_html
+    
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
-    if not link or not is_link_allowed(link):
-        raise HTTPException(status_code=404, detail="not found or inactive")
-    host = get_host()
-    proto = link.get("protocol", DEFAULT_PROTOCOL)
-    fp = link.get("fingerprint", "chrome")
-    vless = generate_vless_link(uuid, host, remark=f"🦅-{link['label']}", protocol=proto, fingerprint=fp)
-    content = base64.b64encode(vless.encode()).decode()
-    return Response(content=content, media_type="text/plain",
-                    headers={"profile-title": quote(link["label"])})
+    
+    if not link:
+        return HTMLResponse("""
+        <!DOCTYPE html>
+        <html lang="fa" dir="rtl">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🦅 کاربر یافت نشد</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;800&display=swap" rel="stylesheet">
+        <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Vazirmatn',sans-serif;background:#0a0a0f;min-height:100vh;display:flex;align-items:center;justify-content:center;color:#F0F0FF}
+        .card{background:rgba(15,15,30,0.85);backdrop-filter:blur(30px);border:1px solid rgba(59,130,246,0.12);border-radius:28px;padding:40px;max-width:420px;text-align:center}
+        .icon{font-size:64px;margin-bottom:16px}
+        h2{font-size:22px;font-weight:800;margin-bottom:8px}
+        p{color:#6A6A8A;font-size:13px;line-height:1.8}
+        </style>
+        </head>
+        <body>
+        <div class="card">
+            <div class="icon">🦅</div>
+            <h2>کاربر یافت نشد</h2>
+            <p>لینک ساب‌لینک معتبر نیست یا کاربر حذف شده است.</p>
+        </div>
+        </body>
+        </html>
+        """, status_code=404)
+    
+    link_data = {
+        **link,
+        "expired": is_link_expired(link),
+        "vless_link": generate_vless_link(
+            uuid, 
+            get_host(), 
+            remark=f"🦅-{link['label']}", 
+            protocol=link.get("protocol", DEFAULT_PROTOCOL),
+            fingerprint=link.get("fingerprint", "chrome")
+        ),
+        "sub_url": f"https://{get_host()}/sub/{uuid}",
+    }
+    
+    return HTMLResponse(content=get_sub_page_html(uuid, link_data))
 
 @app.get("/sub-all")
 async def subscription_all(_=Depends(require_auth)):
