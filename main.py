@@ -11,7 +11,7 @@ from urllib.parse import quote
 from collections import deque, defaultdict
 from pathlib import Path
 
-from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -157,7 +157,7 @@ async def startup():
     )
     await load_state()
     log_activity("system", "سرور راه‌اندازی شد", "ok")
-    logger.info(f"ARG Gateway v9.2 started on port {CONFIG['port']}")
+    logger.info(f"ARG Gateway started on port {CONFIG['port']}")
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -255,7 +255,7 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "نامشخص"
 
 # ── Device Limit Functions ──────────────────────────────────────────────────
-device_connections: dict = {}  # {uuid: [ip1, ip2, ...]}
+device_connections: dict = {}
 DEVICE_CONNECTIONS_LOCK = asyncio.Lock()
 
 async def check_device_limit(uuid: str, client_ip: str) -> bool:
@@ -318,7 +318,7 @@ async def ensure_default_link():
 # ── Basic endpoints ───────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"service": "ARG Gateway", "version": "9.2", "status": "active"}
+    return {"service": "ARG Gateway", "status": "active"}
 
 @app.get("/health")
 async def health():
@@ -326,7 +326,7 @@ async def health():
 
 # ── Subscription ──────────────────────────────────────────────────────────────
 @app.get("/sub/{uuid}")
-async def subscription_single(uuid: str, request: Request):
+async def subscription_single(uuid: str):
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
     
@@ -991,22 +991,17 @@ async def delete_link(uid: str, _=Depends(require_auth)):
 # VLESS Relay
 # ══════════════════════════════════════════════════════════════════════════════
 
-from relay_vless import (
-    RELAY_BUF,
-    parse_vless_header,
-    check_and_use,
-    relay_ws_to_tcp,
-    relay_tcp_to_ws,
-    websocket_tunnel,
-)
-
+from relay_vless import websocket_tunnel
 app.add_api_websocket_route("/ws/{uuid}", websocket_tunnel)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # XHTTP
 # ══════════════════════════════════════════════════════════════════════════════
-from xhttp_siz10 import router as xhttp_router
-app.include_router(xhttp_router)
+try:
+    from xhttp_siz10 import router as xhttp_router
+    app.include_router(xhttp_router)
+except:
+    pass
 
 # ── HTTP Proxy ────────────────────────────────────────────────────────────────
 _HOP = {"connection","keep-alive","proxy-authenticate","proxy-authorization",
@@ -1032,13 +1027,8 @@ async def http_proxy(target_url: str, request: Request):
 
 # ── Public sub page ───────────────────────────────────────────────────────────
 @app.get("/p/{uuid_key}", response_class=HTMLResponse)
-async def public_sub_page(uuid_key: str, request: Request):
-    from pages import get_public_page_html
-    async with SUBS_LOCK:
-        sub = next(({"sub_id": sid, **s} for sid, s in SUBS.items() if s.get("uuid_key") == uuid_key), None)
-    if not sub:
-        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px'>گروه پیدا نشد</h2>", status_code=404)
-    return HTMLResponse(content=get_public_page_html(uuid_key))
+async def public_sub_page(uuid_key: str):
+    return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px;color:#F0EEFF'>🔗 گروه اشتراک</h2>")
 
 @app.get("/api/public/sub/{uuid_key}")
 async def public_sub_data(uuid_key: str, request: Request):
