@@ -11,7 +11,7 @@ from urllib.parse import quote
 from collections import deque, defaultdict
 from pathlib import Path
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import Response, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -19,11 +19,11 @@ import httpx
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("ARG-Gateway")
+logger = logging.getLogger("RVG-Gateway")
 
 IRAN_TZ = ZoneInfo("Asia/Tehran")
 
-app = FastAPI(title="ARG Gateway", docs_url=None, redoc_url=None)
+app = FastAPI(title="RVG Gateway - codebox", docs_url=None, redoc_url=None)
 
 CONFIG = {
     "port": int(os.environ.get("PORT", 8000)),
@@ -41,7 +41,7 @@ app.add_middleware(
 
 # ── Persistence ───────────────────────────────────────────────────────────────
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
-DATA_FILE = DATA_DIR / "arg_state.json"
+DATA_FILE = DATA_DIR / "rvg_state.json"
 SAVE_LOCK = asyncio.Lock()
 
 async def load_state():
@@ -94,10 +94,12 @@ LINKS_LOCK = asyncio.Lock()
 SUBS: dict = {}
 SUBS_LOCK = asyncio.Lock()
 
+# پروتکل‌های پشتیبانی‌شده برای هر کانفیگ
 PROTOCOLS = ("vless-ws", "xhttp-packet-up", "xhttp-stream-up", "xhttp-stream-one")
 DEFAULT_PROTOCOL = "vless-ws"
 
 def log_activity(kind: str, message: str, level: str = "info"):
+    """ثبت یک رخداد در لاگ فعالیت‌ها (ساخت/حذف/ویرایش کانفیگ، ورود، و...)."""
     activity_logs.append({
         "kind": kind,
         "level": level,
@@ -106,7 +108,7 @@ def log_activity(kind: str, message: str, level: str = "info"):
     })
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
-SESSION_COOKIE = "arg_session"
+SESSION_COOKIE = "rvg_session"
 SESSION_TTL = 60 * 60 * 24 * 7
 
 def hash_password(pw: str) -> str:
@@ -157,7 +159,7 @@ async def startup():
     )
     await load_state()
     log_activity("system", "سرور راه‌اندازی شد", "ok")
-    logger.info(f"ARG Gateway started on port {CONFIG['port']}")
+    logger.info(f"RVG Gateway v9.1 started on port {CONFIG['port']}")
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -176,7 +178,8 @@ def generate_uuid() -> str:
 def now_ir() -> datetime:
     return datetime.now(IRAN_TZ)
 
-def generate_vless_link(uuid: str, host: str, remark: str = "ARG", protocol: str = DEFAULT_PROTOCOL, fingerprint: str = "chrome") -> str:
+def generate_vless_link(uuid: str, host: str, remark: str = "RVG", protocol: str = DEFAULT_PROTOCOL) -> str:
+    """می‌سازد VLESS share-link متناسب با پروتکل انتخاب‌شده (WS کلاسیک یا یکی از مدهای XHTTP)."""
     if protocol == "vless-ws":
         path = f"/ws/{uuid}"
         params = {
@@ -186,11 +189,12 @@ def generate_vless_link(uuid: str, host: str, remark: str = "ARG", protocol: str
             "host": host,
             "path": path,
             "sni": host,
-            "fp": fingerprint,
+            "fp": "chrome",
             "alpn": "http/1.1",
         }
     else:
-        mode = protocol.replace("xhttp-", "")
+        # xhttp-packet-up / xhttp-stream-up / xhttp-stream-one
+        mode = protocol.replace("xhttp-", "")  # packet-up | stream-up | stream-one
         path = f"/xhttp-siz10/{mode}/{uuid}"
         params = {
             "encryption": "none",
@@ -200,7 +204,7 @@ def generate_vless_link(uuid: str, host: str, remark: str = "ARG", protocol: str
             "host": host,
             "path": path,
             "sni": host,
-            "fp": fingerprint,
+            "fp": "chrome",
             "alpn": "h2,http/1.1",
         }
     query = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
@@ -246,6 +250,7 @@ def fmt_bytes(b: int) -> str:
     return f"{b/1024**3:.2f} GB"
 
 def client_ip(request: Request) -> str:
+    """آی‌پی واقعی کلاینت رو با احتساب هدرهای پراکسی (Railway/Cloudflare) برمی‌گردونه."""
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
         return fwd.split(",")[0].strip()
@@ -253,38 +258,6 @@ def client_ip(request: Request) -> str:
     if real_ip:
         return real_ip.strip()
     return request.client.host if request.client else "نامشخص"
-
-# ── Device Limit Functions ──────────────────────────────────────────────────
-device_connections: dict = {}
-DEVICE_CONNECTIONS_LOCK = asyncio.Lock()
-
-async def check_device_limit(uuid: str, client_ip: str) -> bool:
-    async with LINKS_LOCK:
-        link = LINKS.get(uuid)
-        if not link:
-            return False
-        max_devices = link.get("max_devices", 0)
-        if max_devices == 0:
-            return True
-    
-    async with DEVICE_CONNECTIONS_LOCK:
-        current_ips = device_connections.get(uuid, [])
-        if client_ip in current_ips:
-            return True
-        if len(current_ips) >= max_devices:
-            return False
-        if uuid not in device_connections:
-            device_connections[uuid] = []
-        device_connections[uuid].append(client_ip)
-        return True
-
-async def remove_device_connection(uuid: str, client_ip: str):
-    async with DEVICE_CONNECTIONS_LOCK:
-        if uuid in device_connections:
-            if client_ip in device_connections[uuid]:
-                device_connections[uuid].remove(client_ip)
-                if not device_connections[uuid]:
-                    del device_connections[uuid]
 
 # ── Default link ──────────────────────────────────────────────────────────────
 _default_link_created = False
@@ -309,8 +282,6 @@ async def ensure_default_link():
                     "is_default": True,
                     "sub_id": None,
                     "protocol": DEFAULT_PROTOCOL,
-                    "max_devices": 0,
-                    "fingerprint": "chrome",
                 }
                 asyncio.create_task(save_state())
         _default_link_created = True
@@ -318,264 +289,44 @@ async def ensure_default_link():
 # ── Basic endpoints ───────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"service": "ARG Gateway", "status": "active"}
+    return {"service": "RVG Gateway", "version": "9.1", "status": "active", "channel": "https://t.me/CodeBoxo"}
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "connections": len(connections), "uptime": uptime()}
 
-# ── Subscription ──────────────────────────────────────────────────────────────
+# ── Subscription (single link) ────────────────────────────────────────────────
 @app.get("/sub/{uuid}")
 async def subscription_single(uuid: str):
+    import base64
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
-    
-    if not link:
-        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px;color:#F87171'>❌ کاربر یافت نشد</h2>", status_code=404)
-    
-    used = link.get('used_bytes', 0)
-    limit = link.get('limit_bytes', 0)
-    active = link.get('active', True)
-    expired = is_link_expired(link)
-    
-    percent = 0
-    if limit > 0:
-        percent = min(100, (used / limit) * 100)
-    
-    expires_at = link.get('expires_at')
-    if expires_at:
-        try:
-            exp_date = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
-            days_left = (exp_date - datetime.now().astimezone()).days
-            if days_left < 0:
-                days_left = 0
-        except:
-            days_left = 'نامشخص'
-    else:
-        days_left = 'نامحدود'
-    
-    label = link.get('label', 'کاربر')
-    is_allowed = active and not expired
-    
-    return HTMLResponse(f"""
-    <!DOCTYPE html>
-    <html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>اطلاعات اشتراک - {label}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{
-                font-family: 'Vazirmatn', sans-serif;
-                background: linear-gradient(135deg, #05050f, #0a0a1a, #1a0a2e);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                color: #F0EEFF;
-            }}
-            .card {{
-                background: rgba(255,255,255,0.04);
-                backdrop-filter: blur(20px);
-                border: 1px solid rgba(255,255,255,0.06);
-                border-radius: 24px;
-                padding: 40px 34px;
-                max-width: 420px;
-                width: 100%;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(124,58,237,0.1);
-            }}
-            .header {{
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                margin-bottom: 28px;
-            }}
-            .logo {{
-                width: 48px;
-                height: 48px;
-                border-radius: 14px;
-                background: linear-gradient(135deg, #7C3AED, #EC4899);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-                font-weight: 800;
-                color: #fff;
-                flex-shrink: 0;
-            }}
-            .title {{
-                font-size: 18px;
-                font-weight: 800;
-                background: linear-gradient(135deg, #A78BFA, #7C3AED, #EC4899);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-            }}
-            .subtitle {{
-                font-size: 11px;
-                color: #6B5B8A;
-                -webkit-text-fill-color: #6B5B8A;
-            }}
-            .user-name {{
-                font-size: 22px;
-                font-weight: 800;
-                margin-bottom: 4px;
-            }}
-            .status {{
-                display: inline-block;
-                padding: 4px 14px;
-                border-radius: 20px;
-                font-size: 12px;
-                font-weight: 600;
-                margin-bottom: 16px;
-            }}
-            .status.active {{
-                background: rgba(16,185,129,0.15);
-                color: #34D399;
-            }}
-            .status.inactive {{
-                background: rgba(239,68,68,0.15);
-                color: #F87171;
-            }}
-            .info-grid {{
-                display: grid;
-                gap: 10px;
-                margin: 20px 0;
-            }}
-            .info-item {{
-                background: rgba(255,255,255,0.03);
-                border: 1px solid rgba(255,255,255,0.05);
-                border-radius: 12px;
-                padding: 14px 16px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }}
-            .info-label {{
-                font-size: 12px;
-                color: #9CA3BF;
-            }}
-            .info-value {{
-                font-size: 14px;
-                font-weight: 700;
-                color: #F0EEFF;
-            }}
-            .info-value.used {{ color: #A78BFA; }}
-            .info-value.remain {{ color: #34D399; }}
-            .progress {{
-                margin: 16px 0 20px;
-            }}
-            .progress-bar {{
-                height: 6px;
-                border-radius: 4px;
-                background: rgba(255,255,255,0.06);
-                overflow: hidden;
-            }}
-            .progress-fill {{
-                height: 100%;
-                border-radius: 4px;
-                background: linear-gradient(90deg, #7C3AED, #EC4899);
-                width: {percent:.1f}%;
-                transition: width 0.6s ease;
-            }}
-            .progress-text {{
-                display: flex;
-                justify-content: space-between;
-                font-size: 11px;
-                color: #9CA3BF;
-                margin-top: 6px;
-            }}
-            .footer {{
-                margin-top: 20px;
-                padding-top: 16px;
-                border-top: 1px solid rgba(255,255,255,0.05);
-                text-align: center;
-                font-size: 11px;
-                color: #6B5B8A;
-            }}
-            .uuid-box {{
-                background: rgba(255,255,255,0.02);
-                border: 1px solid rgba(255,255,255,0.04);
-                border-radius: 8px;
-                padding: 8px 12px;
-                font-size: 10px;
-                font-family: monospace;
-                color: #6B5B8A;
-                word-break: break-all;
-                margin-top: 8px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <div class="header">
-                <div class="logo">A</div>
-                <div>
-                    <div class="title">پنل ARG</div>
-                    <div class="subtitle">اطلاعات اشتراک</div>
-                </div>
-            </div>
-
-            <div class="user-name">{label}</div>
-            <span class="status {'active' if is_allowed else 'inactive'}">
-                {'✅ فعال' if is_allowed else '❌ غیرفعال'}
-            </span>
-
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">📊 حجم مصرف شده</span>
-                    <span class="info-value used">{fmt_bytes(used)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">📦 حجم کل</span>
-                    <span class="info-value">{'نامحدود' if limit == 0 else fmt_bytes(limit)}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">⏳ زمان باقیمانده</span>
-                    <span class="info-value">{days_left if days_left == 'نامحدود' else f'{days_left} روز'}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">📱 دستگاه‌ها</span>
-                    <span class="info-value">{link.get('max_devices', 0) if link.get('max_devices', 0) > 0 else '∞'}</span>
-                </div>
-            </div>
-
-            <div class="progress">
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {percent:.1f}%"></div>
-                </div>
-                <div class="progress-text">
-                    <span>مصرف</span>
-                    <span>{percent:.1f}%</span>
-                </div>
-            </div>
-
-            <div class="uuid-box">🔑 {uuid}</div>
-
-            <div class="footer">🔒 اطلاعات شخصی شما محفوظ است</div>
-        </div>
-    </body>
-    </html>
-    """)
+    if not link or not is_link_allowed(link):
+        raise HTTPException(status_code=404, detail="not found or inactive")
+    host = get_host()
+    proto = link.get("protocol", DEFAULT_PROTOCOL)
+    vless = generate_vless_link(uuid, host, remark=f"RVG-{link['label']}", protocol=proto)
+    content = base64.b64encode(vless.encode()).decode()
+    return Response(content=content, media_type="text/plain",
+                    headers={"profile-title": quote(link["label"]), "support-url": "https://t.me/CodeBoxo"})
 
 @app.get("/sub-all")
 async def subscription_all(_=Depends(require_auth)):
     import base64
     host = get_host()
     async with LINKS_LOCK:
-        lines = []
-        for uid, d in LINKS.items():
-            if is_link_allowed(d):
-                fp = d.get("fingerprint", "chrome")
-                lines.append(generate_vless_link(uid, host, remark=f"ARG-{d['label']}", protocol=d.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp))
+        lines = [
+            generate_vless_link(uid, host, remark=f"RVG-{d['label']}", protocol=d.get("protocol", DEFAULT_PROTOCOL))
+            for uid, d in LINKS.items()
+            if is_link_allowed(d)
+        ]
     content = base64.b64encode("\n".join(lines).encode()).decode()
     return Response(content=content, media_type="text/plain")
 
-# ── Sub Groups ─────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# SUB GROUP endpoints
+# ══════════════════════════════════════════════════════════════════════════════
+
 @app.post("/api/subs")
 async def create_sub(request: Request, _=Depends(require_auth)):
     body = await request.json()
@@ -686,7 +437,7 @@ async def assign_link_to_sub(sub_id: str, request: Request, _=Depends(require_au
     asyncio.create_task(save_state())
     return {"ok": True}
 
-# ── Public sub-group subscription ────────────────────────────────────────────
+# ── Public sub-group subscription file ───────────────────────────────────────
 @app.get("/sub-group/{uuid_key}")
 async def sub_group_subscription(uuid_key: str, request: Request):
     import base64
@@ -707,8 +458,7 @@ async def sub_group_subscription(uuid_key: str, request: Request):
         for lid in link_ids:
             link = LINKS.get(lid)
             if link and is_link_allowed(link):
-                fp = link.get("fingerprint", "chrome")
-                lines.append(generate_vless_link(lid, host, remark=f"ARG-{link['label']}", protocol=link.get("protocol", DEFAULT_PROTOCOL), fingerprint=fp))
+                lines.append(generate_vless_link(lid, host, remark=f"RVG-{link['label']}", protocol=link.get("protocol", DEFAULT_PROTOCOL)))
 
     content = base64.b64encode("\n".join(lines).encode()).decode()
     return Response(
@@ -716,6 +466,7 @@ async def sub_group_subscription(uuid_key: str, request: Request):
         media_type="text/plain",
         headers={
             "profile-title": quote(sub["name"]),
+            "support-url": "https://t.me/CodeBoxo",
             "profile-update-interval": "12",
         }
     )
@@ -746,7 +497,7 @@ async def api_me(request: Request):
     return {"authenticated": await is_valid_session(request.cookies.get(SESSION_COOKIE))}
 
 @app.post("/api/change-password")
-async def api_change_password(request: Request, _=Depends(require_auth)):
+async def api_change_password(request: Request, token=Depends(require_auth)):
     body = await request.json()
     if hash_password(str(body.get("current_password", ""))) != AUTH["password_hash"]:
         raise HTTPException(status_code=400, detail="رمز فعلی اشتباه است")
@@ -756,12 +507,10 @@ async def api_change_password(request: Request, _=Depends(require_auth)):
     AUTH["password_hash"] = hash_password(new)
     async with SESSIONS_LOCK:
         SESSIONS.clear()
-    token = await create_session()
+        SESSIONS[token] = time.time() + SESSION_TTL
     await save_state()
     log_activity("auth", "رمز عبور پنل تغییر کرد", "ok")
-    resp = JSONResponse({"ok": True})
-    resp.set_cookie(SESSION_COOKIE, token, max_age=SESSION_TTL, httponly=True, samesite="lax", path="/")
-    return resp
+    return {"ok": True}
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
 @app.get("/stats")
@@ -788,9 +537,16 @@ async def get_stats(_=Depends(require_auth)):
 async def get_activity(_=Depends(require_auth)):
     return {"logs": list(activity_logs)[-150:]}
 
-# ── Live connections ──────────────────────────────────────────────────────────
+# ── Live connections (with IP) ────────────────────────────────────────────────
 @app.get("/api/connections")
 async def get_connections(_=Depends(require_auth)):
+    """
+    خروجی این endpoint حالا بر اساس IP گروه‌بندی شده:
+    هر آی‌پی فقط یک آیتم نمایش داده می‌شود، با جمع بایت‌های تمام سشن‌های
+    باز روی همان آی‌پی و تعداد سشن‌های فعال آن آی‌پی.
+    raw_count همچنان تعداد واقعی اتصالات باز (سشن‌های خام، مثلاً ۴۰ تا
+    اتصال هم‌زمان یک موبایل) را برمی‌گرداند.
+    """
     async with LINKS_LOCK:
         snap = dict(LINKS)
 
@@ -839,8 +595,8 @@ async def get_connections(_=Depends(require_auth)):
 
     return {
         "connections": result,
-        "count": len(result),
-        "raw_count": len(connections),
+        "count": len(result),          # تعداد آی‌پی‌های یکتا
+        "raw_count": len(connections), # تعداد کل اتصالات باز (بدون گروه‌بندی)
     }
 
 # ── Link Management ───────────────────────────────────────────────────────────
@@ -858,9 +614,6 @@ async def create_link(request: Request, _=Depends(require_auth)):
     protocol = body.get("protocol") or DEFAULT_PROTOCOL
     if protocol not in PROTOCOLS:
         protocol = DEFAULT_PROTOCOL
-    
-    max_devices = int(body.get("max_devices", 0))
-    fingerprint = body.get("fingerprint", "chrome")
 
     uid = generate_uuid()
     async with LINKS_LOCK:
@@ -875,8 +628,6 @@ async def create_link(request: Request, _=Depends(require_auth)):
             "is_default": False,
             "sub_id": sub_id,
             "protocol": protocol,
-            "max_devices": max_devices,
-            "fingerprint": fingerprint,
         }
 
     if sub_id:
@@ -893,7 +644,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
         "uuid": uid,
         **LINKS[uid],
         "expired": False,
-        "vless_link": generate_vless_link(uid, host, remark=f"ARG-{label}", protocol=protocol, fingerprint=fingerprint),
+        "vless_link": generate_vless_link(uid, host, remark=f"RVG-{label}", protocol=protocol),
         "sub_url": f"https://{host}/sub/{uid}",
     }
 
@@ -905,15 +656,12 @@ async def list_links(_=Depends(require_auth)):
     result = []
     for uid, d in snap.items():
         proto = d.get("protocol", DEFAULT_PROTOCOL)
-        fp = d.get("fingerprint", "chrome")
         result.append({
             "uuid": uid,
             **d,
             "protocol": proto,
-            "fingerprint": fp,
-            "max_devices": d.get("max_devices", 0),
             "expired": is_link_expired(d),
-            "vless_link": generate_vless_link(uid, host, remark=f"ARG-{d['label']}", protocol=proto, fingerprint=fp),
+            "vless_link": generate_vless_link(uid, host, remark=f"RVG-{d['label']}", protocol=proto),
             "sub_url": f"https://{host}/sub/{uid}",
         })
     result.sort(key=lambda x: x["created_at"], reverse=True)
@@ -930,7 +678,7 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
         label = link.get("label")
         if "active" in body:
             link["active"] = bool(body["active"])
-            log_activity("link", f"کانفیگ «{label}» {'فعال' if link['active'] else 'غیرفعال'} شد", "ok" if link['active'] else "warn")
+            log_activity("link", f"کانفیگ «{label}» {'فعال' if link['active'] else 'غیرفعال'} شد", "ok" if link["active"] else "warn")
         if "label" in body:
             link["label"] = str(body["label"])[:60]
         if "note" in body:
@@ -945,11 +693,7 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
         if "expires_days" in body:
             ed = int(body["expires_days"] or 0)
             link["expires_at"] = (datetime.now() + timedelta(days=ed)).isoformat() if ed > 0 else None
-        if "max_devices" in body:
-            link["max_devices"] = int(body["max_devices"])
-        if "fingerprint" in body:
-            link["fingerprint"] = str(body["fingerprint"])
-        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint")):
+        if any(k in body for k in ("label", "note", "limit_value", "expires_days")):
             log_activity("link", f"کانفیگ «{link['label']}» ویرایش شد", "info")
         new_sub = body.get("sub_id", "UNCHANGED")
         if new_sub != "UNCHANGED":
@@ -988,20 +732,25 @@ async def delete_link(uid: str, _=Depends(require_auth)):
     return {"ok": True, "deleted": uid}
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VLESS Relay
+# VLESS Relay — جدا شده به relay_vless.py (دست نخورده)
 # ══════════════════════════════════════════════════════════════════════════════
 
-from relay_vless import websocket_tunnel
+from relay_vless import (
+    RELAY_BUF,
+    parse_vless_header,
+    check_and_use,
+    relay_ws_to_tcp,
+    relay_tcp_to_ws,
+    websocket_tunnel,
+)
+
 app.add_api_websocket_route("/ws/{uuid}", websocket_tunnel)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# XHTTP
+# XHTTP — Siz10a XHTTP Ultra (ترابرد جدید، جدا از VLESS/WS، هر ۳ مد)
 # ══════════════════════════════════════════════════════════════════════════════
-try:
-    from xhttp_siz10 import router as xhttp_router
-    app.include_router(xhttp_router)
-except:
-    pass
+from xhttp_siz10 import router as xhttp_router
+app.include_router(xhttp_router)
 
 # ── HTTP Proxy ────────────────────────────────────────────────────────────────
 _HOP = {"connection","keep-alive","proxy-authenticate","proxy-authorization",
@@ -1027,8 +776,13 @@ async def http_proxy(target_url: str, request: Request):
 
 # ── Public sub page ───────────────────────────────────────────────────────────
 @app.get("/p/{uuid_key}", response_class=HTMLResponse)
-async def public_sub_page(uuid_key: str):
-    return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px;color:#F0EEFF'>🔗 گروه اشتراک</h2>")
+async def public_sub_page(uuid_key: str, request: Request):
+    from pages import get_public_page_html
+    async with SUBS_LOCK:
+        sub = next(({"sub_id": sid, **s} for sid, s in SUBS.items() if s.get("uuid_key") == uuid_key), None)
+    if not sub:
+        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px'>گروه پیدا نشد</h2>", status_code=404)
+    return HTMLResponse(content=get_public_page_html(uuid_key))
 
 @app.get("/api/public/sub/{uuid_key}")
 async def public_sub_data(uuid_key: str, request: Request):
@@ -1059,20 +813,17 @@ async def public_sub_data(uuid_key: str, request: Request):
         conn_count = sum(1 for c in connections.values() if c.get("uuid") == lid)
         active_conns += conn_count
         proto = link.get("protocol", DEFAULT_PROTOCOL)
-        fp = link.get("fingerprint", "chrome")
         links_out.append({
             "uuid": lid,
             "label": link["label"],
             "active": allowed,
             "protocol": proto,
-            "fingerprint": fp,
-            "max_devices": link.get("max_devices", 0),
             "used_bytes": link.get("used_bytes", 0),
             "used_fmt": fmt_bytes(link.get("used_bytes", 0)),
             "limit_bytes": link.get("limit_bytes", 0),
             "limit_fmt": "∞" if link.get("limit_bytes", 0) == 0 else fmt_bytes(link["limit_bytes"]),
             "expires_at": link.get("expires_at"),
-            "vless_link": generate_vless_link(lid, host, remark=f"ARG-{link['label']}", protocol=proto, fingerprint=fp),
+            "vless_link": generate_vless_link(lid, host, remark=f"RVG-{link['label']}", protocol=proto),
             "sub_url": f"https://{host}/sub/{lid}",
             "connections": conn_count,
         })
@@ -1088,7 +839,7 @@ async def public_sub_data(uuid_key: str, request: Request):
         "links": links_out,
     }
 
-# ── HTML Pages ────────────────────────────────────────────────────────────────
+# ── HTML Pages (login + dashboard) ───────────────────────────────────────────
 from pages import LOGIN_HTML, DASHBOARD_HTML
 
 @app.get("/login", response_class=HTMLResponse)
