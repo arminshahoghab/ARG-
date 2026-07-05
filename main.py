@@ -259,7 +259,6 @@ device_connections: dict = {}  # {uuid: [ip1, ip2, ...]}
 DEVICE_CONNECTIONS_LOCK = asyncio.Lock()
 
 async def check_device_limit(uuid: str, client_ip: str) -> bool:
-    """بررسی محدودیت دستگاه همزمان"""
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
         if not link:
@@ -280,7 +279,6 @@ async def check_device_limit(uuid: str, client_ip: str) -> bool:
         return True
 
 async def remove_device_connection(uuid: str, client_ip: str):
-    """حذف اتصال از لیست فعال"""
     async with DEVICE_CONNECTIONS_LOCK:
         if uuid in device_connections:
             if client_ip in device_connections[uuid]:
@@ -313,6 +311,7 @@ async def ensure_default_link():
                     "protocol": DEFAULT_PROTOCOL,
                     "max_devices": 0,
                     "fingerprint": "chrome",
+                    "outbound_ip": "",
                 }
                 asyncio.create_task(save_state())
         _default_link_created = True
@@ -329,14 +328,12 @@ async def health():
 # ── Subscription ──────────────────────────────────────────────────────────────
 @app.get("/sub/{uuid}")
 async def subscription_single(uuid: str, request: Request):
-    """ساب‌لینک اختصاصی هر کاربر با نمایش اطلاعات در صفحه"""
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
     
     if not link:
         return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px;color:#F87171'>❌ کاربر یافت نشد</h2>", status_code=404)
     
-    # محاسبه اطلاعات
     used = link.get('used_bytes', 0)
     limit = link.get('limit_bytes', 0)
     active = link.get('active', True)
@@ -360,8 +357,9 @@ async def subscription_single(uuid: str, request: Request):
     
     label = link.get('label', 'کاربر')
     is_allowed = active and not expired
+    outbound_ip = link.get('outbound_ip', '')
+    ip_display = outbound_ip if outbound_ip else '🔄 IP پیش‌فرض (سرور)'
     
-    # صفحه HTML زیبا برای نمایش اطلاعات
     return HTMLResponse(f"""
     <!DOCTYPE html>
     <html lang="fa" dir="rtl">
@@ -429,9 +427,6 @@ async def subscription_single(uuid: str, request: Request):
                 font-size: 22px;
                 font-weight: 800;
                 margin-bottom: 4px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
             }}
             .status {{
                 display: inline-block;
@@ -472,11 +467,15 @@ async def subscription_single(uuid: str, request: Request):
                 font-weight: 700;
                 color: #F0EEFF;
             }}
-            .info-value.used {{
-                color: #A78BFA;
-            }}
-            .info-value.remain {{
-                color: #34D399;
+            .info-value.used {{ color: #A78BFA; }}
+            .info-value.remain {{ color: #34D399; }}
+            .info-value.proxy {{
+                color: #FCD34D;
+                font-size: 12px;
+                background: rgba(245,158,11,0.1);
+                padding: 4px 12px;
+                border-radius: 12px;
+                border: 1px solid rgba(245,158,11,0.15);
             }}
             .progress {{
                 margin: 16px 0 20px;
@@ -520,6 +519,11 @@ async def subscription_single(uuid: str, request: Request):
                 word-break: break-all;
                 margin-top: 8px;
             }}
+            .badge-proxy {{
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }}
         </style>
     </head>
     <body>
@@ -532,9 +536,7 @@ async def subscription_single(uuid: str, request: Request):
                 </div>
             </div>
 
-            <div class="user-name">
-                {label}
-            </div>
+            <div class="user-name">{label}</div>
             <span class="status {'active' if is_allowed else 'inactive'}">
                 {'✅ فعال' if is_allowed else '❌ غیرفعال'}
             </span>
@@ -556,6 +558,15 @@ async def subscription_single(uuid: str, request: Request):
                     <span class="info-label">📱 دستگاه‌ها</span>
                     <span class="info-value">{link.get('max_devices', 0) if link.get('max_devices', 0) > 0 else '∞'}</span>
                 </div>
+                <div class="info-item">
+                    <span class="info-label">🌐 IP خروجی</span>
+                    <span class="info-value proxy">
+                        <span class="badge-proxy">
+                            <i class="ti ti-shield"></i>
+                            {ip_display}
+                        </span>
+                    </span>
+                </div>
             </div>
 
             <div class="progress">
@@ -568,13 +579,9 @@ async def subscription_single(uuid: str, request: Request):
                 </div>
             </div>
 
-            <div class="uuid-box">
-                🔑 {uuid}
-            </div>
+            <div class="uuid-box">🔑 {uuid}</div>
 
-            <div class="footer">
-                <span>🔒 اطلاعات شخصی شما محفوظ است</span>
-            </div>
+            <div class="footer">🔒 اطلاعات شخصی شما محفوظ است</div>
         </div>
     </body>
     </html>
@@ -879,6 +886,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
     
     max_devices = int(body.get("max_devices", 0))
     fingerprint = body.get("fingerprint", "chrome")
+    outbound_ip = body.get("outbound_ip", "").strip()
 
     uid = generate_uuid()
     async with LINKS_LOCK:
@@ -895,6 +903,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
             "protocol": protocol,
             "max_devices": max_devices,
             "fingerprint": fingerprint,
+            "outbound_ip": outbound_ip,
         }
 
     if sub_id:
@@ -967,7 +976,9 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
             link["max_devices"] = int(body["max_devices"])
         if "fingerprint" in body:
             link["fingerprint"] = str(body["fingerprint"])
-        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint")):
+        if "outbound_ip" in body:
+            link["outbound_ip"] = str(body["outbound_ip"]).strip()
+        if any(k in body for k in ("label", "note", "limit_value", "expires_days", "max_devices", "fingerprint", "outbound_ip")):
             log_activity("link", f"کانفیگ «{link['label']}» ویرایش شد", "info")
         new_sub = body.get("sub_id", "UNCHANGED")
         if new_sub != "UNCHANGED":
@@ -1103,6 +1114,7 @@ async def public_sub_data(uuid_key: str, request: Request):
             "vless_link": generate_vless_link(lid, host, remark=f"ARG-{link['label']}", protocol=proto, fingerprint=fp),
             "sub_url": f"https://{host}/sub/{lid}",
             "connections": conn_count,
+            "outbound_ip": link.get("outbound_ip", ""),
         })
 
     total_used = sum(l["used_bytes"] for l in links_out)
