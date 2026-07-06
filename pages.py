@@ -1,4 +1,4 @@
-# pages.py - پنل عقاب (نسخه نهایی با بنر رایگان + اتصالات دقیق)
+# pages.py - پنل عقاب (نسخه کامل با بنر رایگان + اتصالات دقیق + اسم کانفیگ)
 
 LOGIN_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 </body></html>"""
 
 
-# ===== صفحه ساب‌لینک با بنر رایگان و اتصالات دقیق =====
+# ===== صفحه ساب‌لینک =====
 def get_sub_page_html(uuid: str, link: dict) -> str:
     """صفحه ساب‌لینک با بنر رایگان و اتصالات دقیق"""
     
@@ -1087,10 +1087,11 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
     # ===== ساخت لینک =====
     from main import get_host, generate_vless_link
     host = get_host()
+    remark = f"عقاب-رایگان-{label}"
     new_vless_link = generate_vless_link(
         uuid, 
         host, 
-        remark="🔥 رایگان - عقاب", 
+        remark=remark,
         protocol=protocol,
         fingerprint=fingerprint,
         port=port
@@ -1136,7 +1137,6 @@ body{{
     background-size:400% 400%;
     animation:fireBG 8s ease infinite;
 }}
-/* ===== بنر رایگان ===== */
 .free-banner{{
     position:fixed;top:0;left:0;right:0;z-index:999;
     background:linear-gradient(135deg,#FF6B35,#FF4500,#FF8C00);
