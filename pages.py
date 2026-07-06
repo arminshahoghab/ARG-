@@ -1,10 +1,10 @@
-# pages.py - پنل عقاب (نسخه با مصرف امروز + وضعیت)
+# pages.py - پنل عقاب (نسخه کامل با تم RGB و تنظیمات)
 
 LOGIN_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 ورود · پنل عقاب</title>
+<title>🦅 ورود · پنل عقاب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -12,8 +12,11 @@ LOGIN_HTML = r"""<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 @keyframes fireBG{0%{background-position:0% 50%}25%{background-position:50% 0%}50%{background-position:100% 50%}75%{background-position:50% 100%}100%{background-position:0% 50%}}
 @keyframes flameFlicker{0%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.02)}100%{opacity:0.6;transform:scale(1)}}
+@keyframes rgbBG{0%{background:#1a0505}25%{background:#050a1a}50%{background:#1a0a05}75%{background:#0a051a}100%{background:#1a0505}}
 :root{--bg:#0a0a1a;--card:rgba(20,10,10,0.85);--accent:#FF6B35;--accent2:#FF8C00;--text:#F0EEFF;--dim:#8A4A3A;--mid:#A06040;--border:rgba(255,100,50,0.2)}
 [data-theme="white"]{--bg:#F5E6E0;--card:rgba(255,245,240,0.85);--accent:#E05A2A;--accent2:#CC5500;--text:#2A0A05;--dim:#8A5A4A;--mid:#6A3A2A;--border:rgba(200,80,40,0.2)}
+body.rgb-mode{background:linear-gradient(135deg,#1a0505,#050a1a,#1a0a05,#0a051a,#1a0505) !important;background-size:400% 400% !important;animation:rgbBG 4s ease infinite !important}
+[data-theme="white"] body.rgb-mode{background:linear-gradient(135deg,#f5e6e0,#e0e8f5,#f0e8d5,#e8d5f0,#f5e6e0) !important;background-size:400% 400% !important;animation:rgbBG 4s ease infinite !important}
 html,body{height:100%;overflow:hidden}
 body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#1a0505,#2a0a0a,#3d0f0a,#2a0505,#1a0a0a);background-size:400% 400%;animation:fireBG 8s ease infinite;display:flex;align-items:center;justify-content:center;padding:20px;transition:background .3s}
 [data-theme="white"] body{background:linear-gradient(135deg,#F5E6E0,#E8D5CC,#F0D5C8)}
@@ -74,7 +77,7 @@ input:focus+.ic{color:#FF8C00}
 <div class="glow-orb orb1"></div><div class="glow-orb orb2"></div><div class="glow-orb orb3"></div>
 <div class="wrap">
   <div class="card">
-    <div class="brand"><div class="brand-icon">🔥</div><div><div class="brand-name">پنل عقاب</div><div class="brand-sub">مدیریت کاربران</div></div></div>
+    <div class="brand"><div class="brand-icon">🦅</div><div><div class="brand-name">پنل عقاب</div><div class="brand-sub">مدیریت کاربران</div></div></div>
     <h1>ورود به پنل عقاب</h1>
     <p class="sub">رمز عبور را برای دسترسی به داشبورد وارد کنید</p>
     <div class="err" id="err"><i class="ti ti-alert-circle"></i><span id="err-text"></span></div>
@@ -83,7 +86,7 @@ input:focus+.ic{color:#FF8C00}
       <div class="field"><label>رمز عبور</label><div class="inp-wrap"><input type="password" id="pw" placeholder="رمز عبور را وارد کنید" autofocus required><i class="ti ti-lock ic"></i></div></div>
       <button class="btn" type="submit" id="btn"><i class="ti ti-login-2"></i> ورود به پنل</button>
     </form>
-    <div class="footer">🔥 پنل عقاب · v10.0 · <button onclick="toggleTheme()"><i class="ti ti-palette"></i> تغییر تم</button></div>
+    <div class="footer">🦅 پنل عقاب · v10.0 · <button onclick="toggleTheme()"><i class="ti ti-palette"></i> تغییر تم</button></div>
   </div>
 </div>
 <script>
@@ -112,7 +115,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 پنل عقاب · مدیریت کاربران</title>
+<title>🦅 پنل عقاب · مدیریت کاربران</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -145,9 +148,13 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 }
 @keyframes fireBG{0%{background-position:0% 50%}25%{background-position:50% 0%}50%{background-position:100% 50%}75%{background-position:50% 100%}100%{background-position:0% 50%}}
 @keyframes flamePulse{0%,100%{opacity:0.4}50%{opacity:0.8}}
+@keyframes rgbBG{0%{background:#1a0505}25%{background:#050a1a}50%{background:#1a0a05}75%{background:#0a051a}100%{background:#1a0505}}
+@keyframes rgbBGLight{0%{background:#f5e6e0}25%{background:#e0e8f5}50%{background:#f0e8d5}75%{background:#e8d5f0}100%{background:#f5e6e0}}
 html,body{height:100%}
 body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#1a0505,#2a0a0a,#3d0f0a,#2a0505,#1a0a0a);background-size:400% 400%;animation:fireBG 8s ease infinite;color:var(--t1);min-height:100vh;display:flex;font-size:14px;transition:background .3s,color .3s}
 [data-theme="white"] body{background:linear-gradient(135deg,#F5E6E0,#E8D5CC,#F0D5C8)}
+body.rgb-mode{background:linear-gradient(135deg,#1a0505,#050a1a,#1a0a05,#0a051a,#1a0505) !important;background-size:400% 400% !important;animation:rgbBG 4s ease infinite !important}
+[data-theme="white"] body.rgb-mode{background:linear-gradient(135deg,#f5e6e0,#e0e8f5,#f0e8d5,#e8d5f0,#f5e6e0) !important;background-size:400% 400% !important;animation:rgbBGLight 4s ease infinite !important}
 .fire-glow{position:fixed;border-radius:50%;filter:blur(150px);z-index:0;animation:flamePulse 2s ease-in-out infinite;pointer-events:none}
 .fg1{width:600px;height:600px;background:rgba(255,80,20,0.04);top:-250px;right:-150px}
 .fg2{width:450px;height:450px;background:rgba(255,150,50,0.03);bottom:-150px;left:-100px;animation-delay:1s}
@@ -169,6 +176,10 @@ body{font-family:'Vazirmatn',sans-serif;background:linear-gradient(135deg,#1a050
 .sb-foot{padding:14px 16px;border-top:1px solid var(--card-b)}
 .theme-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--accent-d);color:var(--t2);border-radius:10px;padding:8px;font-size:11px;font-weight:500;font-family:inherit;border:1px solid var(--card-b);cursor:pointer;width:100%;transition:.2s;margin-bottom:7px}
 .theme-btn:hover{background:var(--card-b);color:var(--t1)}
+.rgb-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,#ff0000,#00ff00,#0000ff,#ff0000);background-size:300% 300%;animation:btnFire 3s ease infinite;color:#fff;border-radius:10px;padding:8px;font-size:11px;font-weight:600;font-family:inherit;border:none;cursor:pointer;width:100%;transition:.2s;margin-bottom:7px;box-shadow:0 4px 15px rgba(255,0,0,0.2)}
+.rgb-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,0,0,0.3)}
+.rgb-btn.off{background:var(--accent-d);color:var(--t2);animation:none;box-shadow:none}
+.rgb-btn.off:hover{background:var(--card-b);color:var(--t1)}
 .support-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,#FF6B35,#FF4500);color:#fff;border-radius:10px;padding:8px;font-size:12px;font-weight:600;font-family:inherit;border:none;cursor:pointer;width:100%;transition:.2s;margin-bottom:7px;box-shadow:0 4px 15px rgba(255,80,20,0.2)}
 .support-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,80,20,0.3)}
 .logout-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--red-bg);color:var(--red-t);border-radius:10px;padding:8px;font-size:12px;font-weight:500;font-family:inherit;border:1px solid rgba(239,68,68,0.2);cursor:pointer;width:100%;transition:.2s}
@@ -286,6 +297,13 @@ select.fi{appearance:none;cursor:pointer}
 .settings-card .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,80,20,.08)}
 .settings-card .field input::placeholder{color:var(--t3)}
 .settings-card .btn{width:100%;justify-content:center;margin-top:4px}
+.settings-card .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--card-b)}
+.settings-card .toggle-row .toggle-label{font-size:13px;color:var(--t2);display:flex;align-items:center;gap:8px}
+.settings-card .toggle-row .toggle-label i{font-size:18px}
+.switch{position:relative;width:48px;height:26px;background:var(--t3);border-radius:13px;cursor:pointer;transition:.3s;flex-shrink:0}
+.switch.on{background:linear-gradient(135deg,#FF6B35,#FF4500)}
+.switch .slider{position:absolute;top:2px;right:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.switch.on .slider{right:24px}
 
 @media(max-width:1200px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
@@ -310,7 +328,7 @@ select.fi{appearance:none;cursor:pointer}
 <div class="modal-bg" id="modal-user">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-user')"><i class="ti ti-x"></i></button>
-    <div class="modal-title"><i class="ti ti-user-plus"></i> 🔥 ساخت کانفیگ جدید</div>
+    <div class="modal-title"><i class="ti ti-user-plus"></i> 🦅 ساخت کانفیگ جدید</div>
     
     <div class="fg"><label><i class="ti ti-tag"></i> نام کاربری</label><input class="fi" id="user-label" placeholder="مثلاً: کاربر علی"></div>
     
@@ -348,7 +366,7 @@ select.fi{appearance:none;cursor:pointer}
 <div class="modal-bg" id="modal-edit">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-edit')"><i class="ti ti-x"></i></button>
-    <div class="modal-title"><i class="ti ti-edit"></i> 🔥 ویرایش کانفیگ</div>
+    <div class="modal-title"><i class="ti ti-edit"></i> 🦅 ویرایش کانفیگ</div>
     <input type="hidden" id="edit-uuid">
     
     <div class="fg" id="edit-password-section">
@@ -400,7 +418,7 @@ select.fi{appearance:none;cursor:pointer}
 <div class="modal-bg" id="modal-delete">
   <div class="modal" style="max-width:400px">
     <button class="modal-close" onclick="closeModal('modal-delete')"><i class="ti ti-x"></i></button>
-    <div class="modal-title"><i class="ti ti-trash"></i> 🔥 حذف کانفیگ</div>
+    <div class="modal-title"><i class="ti ti-trash"></i> 🦅 حذف کانفیگ</div>
     <input type="hidden" id="delete-uuid">
     <p style="font-size:13px;color:var(--t2);margin-bottom:16px">برای حذف این کانفیگ، رمز آن را وارد کنید.</p>
     <div class="fg">
@@ -416,14 +434,14 @@ select.fi{appearance:none;cursor:pointer}
 
 <!-- ===== هدر موبایل ===== -->
 <div class="mob-top">
-  <div class="ml"><div class="mob-logo">🔥</div><span class="mob-title">پنل عقاب</span></div>
+  <div class="ml"><div class="mob-logo">🦅</div><span class="mob-title">پنل عقاب</span></div>
   <div class="mob-right"><button class="theme-mob" id="theme-mob-btn" onclick="toggleTheme()"><i class="ti ti-palette" id="theme-mob-icon"></i></button><button class="menu-btn" id="open-sb"><i class="ti ti-menu-2"></i></button></div>
 </div>
 <div class="overlay" id="overlay"></div>
 
 <!-- ===== سایدبار ===== -->
 <aside class="sidebar" id="sb">
-  <div class="logo"><div class="logo-icon">🔥</div><div><div class="logo-name">پنل عقاب</div><div class="logo-sub">مدیریت کاربران</div></div></div>
+  <div class="logo"><div class="logo-icon">🦅</div><div><div class="logo-name">پنل عقاب</div><div class="logo-sub">مدیریت کاربران</div></div></div>
   <div class="nav-wrap">
     <div class="nav-it on" data-pg="users"><i class="ti ti-layout-dashboard"></i> داشبورد</div>
     <div class="nav-it" data-pg="connections"><i class="ti ti-plug-connected"></i> اتصالات زنده</div>
@@ -433,6 +451,7 @@ select.fi{appearance:none;cursor:pointer}
   </div>
   <div class="sb-foot">
     <button class="theme-btn" onclick="toggleTheme()"><i class="ti ti-palette" id="theme-icon"></i> <span id="theme-label">تغییر تم</span></button>
+    <button class="rgb-btn off" id="rgb-btn" onclick="toggleRGB()"><i class="ti ti-color-swatch"></i> <span id="rgb-label">تم RGB</span></button>
     <button class="support-btn" onclick="window.open('https://t.me/+QyEVU0FquFczYjQ0','_blank')"><i class="ti ti-brand-telegram"></i> گروه پشتیبانی</button>
     <button class="logout-btn" onclick="logout()"><i class="ti ti-logout"></i> خروج</button>
   </div>
@@ -486,22 +505,16 @@ select.fi{appearance:none;cursor:pointer}
 </section>
 
 <section class="pg" id="pg-settings">
-  <div class="topbar"><div><div class="tb-title"><i class="ti ti-settings"></i> تنظیمات پنل</div><div class="tb-sub">تغییر رمز عبور پنل مدیریت</div></div></div>
+  <div class="topbar"><div><div class="tb-title"><i class="ti ti-settings"></i> تنظیمات پنل</div><div class="tb-sub">تنظیمات ظاهری و مدیریتی</div></div></div>
   <div class="settings-card">
-    <div class="title"><i class="ti ti-lock"></i> تغییر رمز عبور</div>
-    <div class="field">
-      <label>رمز فعلی</label>
-      <input type="password" id="current-password" placeholder="رمز فعلی را وارد کنید" dir="ltr">
+    <div class="title"><i class="ti ti-color-swatch"></i> تنظیمات ظاهری</div>
+    <div class="toggle-row">
+      <div class="toggle-label"><i class="ti ti-color-palette" style="background:linear-gradient(135deg,#ff0000,#00ff00,#0000ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent"></i> تم RGB متحرک</div>
+      <div class="switch" id="rgb-switch" onclick="toggleRGB()">
+        <div class="slider"></div>
+      </div>
     </div>
-    <div class="field">
-      <label>رمز جدید</label>
-      <input type="password" id="new-password" placeholder="رمز جدید (حداقل ۴ کاراکتر)" dir="ltr">
-    </div>
-    <div class="field">
-      <label>تکرار رمز جدید</label>
-      <input type="password" id="confirm-password" placeholder="تکرار رمز جدید" dir="ltr">
-    </div>
-    <button class="btn btn-p" onclick="changePassword()"><i class="ti ti-check"></i> تغییر رمز</button>
+    <div style="margin-top:12px;font-size:10px;color:var(--t3)">💡 با فعال کردن این گزینه، رنگ پنل هر ۲ ثانیه به صورت آرام تغییر میکند</div>
   </div>
 </section>
 
@@ -540,6 +553,58 @@ function toggleTheme() {
 }
 applyTheme(currentTheme);
 
+// ===== تم RGB =====
+let rgbMode = false;
+
+async function loadRGBStatus() {
+  try {
+    const r = await authF('/api/settings');
+    const data = await r.json();
+    rgbMode = data.rgb_mode || false;
+    updateRGBUI();
+  } catch(e) {}
+}
+
+function updateRGBUI() {
+  const btn = document.getElementById('rgb-btn');
+  const label = document.getElementById('rgb-label');
+  const sw = document.getElementById('rgb-switch');
+  
+  if (rgbMode) {
+    document.body.classList.add('rgb-mode');
+    btn.classList.remove('off');
+    btn.style.background = 'linear-gradient(135deg,#ff0000,#00ff00,#0000ff,#ff0000)';
+    btn.style.backgroundSize = '300% 300%';
+    btn.style.animation = 'btnFire 3s ease infinite';
+    label.textContent = 'RGB: روشن';
+    sw.classList.add('on');
+  } else {
+    document.body.classList.remove('rgb-mode');
+    btn.classList.add('off');
+    btn.style.background = '';
+    btn.style.animation = '';
+    label.textContent = 'تم RGB';
+    sw.classList.remove('on');
+  }
+}
+
+async function toggleRGB() {
+  const newState = !rgbMode;
+  try {
+    const r = await authF('/api/settings/rgb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: newState })
+    });
+    const data = await r.json();
+    rgbMode = data.rgb_mode;
+    updateRGBUI();
+    toast(rgbMode ? '🌈 تم RGB فعال شد' : '🌙 تم RGB غیرفعال شد', 'ok');
+  } catch(e) {
+    toast('خطا در تغییر تنظیمات', 'err');
+  }
+}
+
 // ===== توابع کمکی =====
 function toast(msg, type='') {
   const t = document.getElementById('toast');
@@ -562,74 +627,6 @@ function esc(s) {
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-// ===== تغییر رمز پنل =====
-async function changePassword() {
-  const current = document.getElementById('current-password').value;
-  const newpw = document.getElementById('new-password').value;
-  const confirm = document.getElementById('confirm-password').value;
-  
-  if (!current) { toast('رمز فعلی را وارد کنید', 'err'); return; }
-  if (newpw.length < 4) { toast('رمز جدید باید حداقل ۴ کاراکتر باشد', 'err'); return; }
-  if (newpw !== confirm) { toast('رمز جدید و تکرار آن مطابقت ندارند', 'err'); return; }
-  
-  try {
-    const r = await authF('/api/change-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ current_password: current, new_password: newpw })
-    });
-    if (!r.ok) {
-      const err = await r.json().catch(()=>({}));
-      toast(err.detail || 'خطا', 'err');
-      return;
-    }
-    document.getElementById('current-password').value = '';
-    document.getElementById('new-password').value = '';
-    document.getElementById('confirm-password').value = '';
-    toast('✅ رمز پنل با موفقیت تغییر کرد', 'ok');
-  } catch(e) {
-    toast('خطا: ' + e.message, 'err');
-  }
-}
-
-// ===== بکاپ =====
-async function createBackup() {
-  try {
-    const r = await authF('/api/backup');
-    const data = await r.json();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `eagle_backup_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast('✅ بکاپ با موفقیت دانلود شد', 'ok');
-  } catch(e) {
-    toast('خطا در بکاپ‌گیری', 'err');
-  }
-}
-
-async function restoreBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    const r = await authF('/api/backup/restore', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!r.ok) throw new Error();
-    toast('✅ بکاپ با موفقیت بازیابی شد', 'ok');
-    setTimeout(() => location.reload(), 1500);
-  } catch(e) {
-    toast('خطا در بازیابی بکاپ', 'err');
-  }
-  event.target.value = '';
-}
 
 // ===== احراز هویت =====
 async function authF(url, opts={}) {
@@ -687,7 +684,7 @@ async function loadUsers() {
       const sr = await authF('/stats');
       const statsData = await sr.json();
       if (statsData.top_user) {
-        document.getElementById('top-user-label').textContent = '🔥 ' + statsData.top_user.label;
+        document.getElementById('top-user-label').textContent = '🦅 ' + statsData.top_user.label;
         document.getElementById('top-user-usage').textContent = statsData.top_user.used_fmt || '0';
       } else {
         document.getElementById('top-user-label').textContent = '—';
@@ -711,20 +708,15 @@ async function loadUsers() {
       const port = l.port || 443;
       const warningText = l.warning_config || '';
       
-      // ===== مصرف امروز =====
       const todayBytes = l.today_bytes || 0;
       const todayFmt = fmtB(todayBytes);
-      
-      // ===== آخرین اتصال =====
       const lastSeen = l.last_connected_at ? new Date(l.last_connected_at).toLocaleString('fa-IR') : '—';
-      
-      // ===== وضعیت =====
       const statusText = active ? '🟢 آنلاین' : '🔴 آفلاین';
       const statusClass = active ? 'on' : 'off';
       
       return `<div class="user-card">
         <div class="head">
-          <div class="name">🔥 ${esc(l.label)} ${hasPassword ? '<span class="lock-badge"><i class="ti ti-lock"></i> رمزدار</span>' : ''}</div>
+          <div class="name">🦅 ${esc(l.label)} ${hasPassword ? '<span class="lock-badge"><i class="ti ti-lock"></i> رمزدار</span>' : ''}</div>
           <span class="status ${statusClass}">${statusText}</span>
         </div>
         <div class="uuid">🔑 ${esc(l.uuid)}</div>
@@ -845,7 +837,7 @@ async function saveEdit() {
         }
         
         closeModal('modal-edit');
-        toast('🔥 کانفیگ ویرایش شد ✓', 'ok');
+        toast('🦅 کانفیگ ویرایش شد ✓', 'ok');
         loadUsers();
     } catch(e) {
         toast('خطا در ویرایش: ' + e.message, 'err');
@@ -882,7 +874,7 @@ async function confirmDelete() {
         }
         
         closeModal('modal-delete');
-        toast('🔥 کاربر حذف شد', 'ok');
+        toast('🦅 کاربر حذف شد', 'ok');
         loadUsers();
     } catch(e) {
         toast('خطا در حذف: ' + e.message, 'err');
@@ -891,10 +883,6 @@ async function confirmDelete() {
 
 // ===== ساخت کانفیگ جدید =====
 async function saveUser() {
-  if (!confirm('🔥 مطمئن هستید این کانفیگ را رایگان میدهید؟')) {
-    return;
-  }
-  
   const label = document.getElementById('user-label').value.trim() || 'کاربر';
   const quota = parseFloat(document.getElementById('user-quota').value) || 2;
   const unit = document.getElementById('user-unit').value || 'GB';
@@ -935,7 +923,7 @@ async function saveUser() {
     document.getElementById('user-port').value = '443';
     
     closeModal('modal-user');
-    toast('🔥 کانفیگ ساخته شد ✓', 'ok');
+    toast('🦅 کانفیگ ساخته شد ✓', 'ok');
     loadUsers();
   } catch(e) {
     toast('خطا در ساخت', 'err');
@@ -986,6 +974,44 @@ async function loadConnections() {
   } catch(e) { console.error(e); }
 }
 
+// ===== بکاپ =====
+async function createBackup() {
+  try {
+    const r = await authF('/api/backup');
+    const data = await r.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eagle_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ بکاپ با موفقیت دانلود شد', 'ok');
+  } catch(e) {
+    toast('خطا در بکاپ‌گیری', 'err');
+  }
+}
+
+async function restoreBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const r = await authF('/api/backup/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error();
+    toast('✅ بکاپ با موفقیت بازیابی شد', 'ok');
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    toast('خطا در بازیابی بکاپ', 'err');
+  }
+  event.target.value = '';
+}
+
 // ===== بارگذاری اولیه =====
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -994,6 +1020,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!d.authenticated) location.href = '/login';
   } catch(e) { location.href = '/login'; }
   
+  await loadRGBStatus();
   loadUsers();
   loadConnections();
   
@@ -1008,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 # ===== صفحه ساب‌لینک =====
 def get_sub_page_html(uuid: str, link: dict) -> str:
-    """صفحه ساب‌لینک با بنر رایگان و اتصالات دقیق"""
+    """صفحه ساب‌لینک با اتصالات زنده"""
     
     used = link.get('used_bytes', 0)
     limit = link.get('limit_bytes', 0)
@@ -1056,7 +1083,6 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
     used_fmt = fmt_bytes(used)
     limit_fmt = 'نامحدود' if limit == 0 else fmt_bytes(limit)
     
-    # ===== ساخت لیست اتصالات زنده =====
     conns_html = ""
     if active_connections > 0:
         conns_html = f"""
@@ -1089,7 +1115,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
     
     from main import get_host, generate_vless_link
     host = get_host()
-    remark = f"عقاب-رایگان-{label}"
+    remark = f"عقاب-{label}"
     new_vless_link = generate_vless_link(
         uuid, 
         host, 
@@ -1104,7 +1130,7 @@ def get_sub_page_html(uuid: str, link: dict) -> str:
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 {label} · پنل عقاب</title>
+<title>🦅 {label} · پنل عقاب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -1139,26 +1165,6 @@ body{{
     background-size:400% 400%;
     animation:fireBG 8s ease infinite;
 }}
-.free-banner{{
-    position:fixed;top:0;left:0;right:0;z-index:999;
-    background:linear-gradient(135deg,#FF6B35,#FF4500,#FF8C00);
-    background-size:200% 200%;
-    animation:btnFire 3s ease infinite;
-    padding:10px 12px;
-    text-align:center;
-    font-size:13px;
-    font-weight:800;
-    color:#fff;
-    box-shadow:0 2px 20px rgba(255,80,20,0.3);
-    border-bottom:2px solid rgba(255,255,255,0.1);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    flex-wrap:wrap;
-}}
-.free-banner .hl{{background:#fff;color:#FF4500;padding:0 12px;border-radius:4px;font-size:14px}}
-@keyframes btnFire{{0%{{background-position:0% 50%}}50%{{background-position:100% 50%}}100%{{background-position:0% 50%}}}}
 .fire-particles{{
     position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
 }}
@@ -1189,7 +1195,6 @@ body{{
     border-radius:28px;
     padding:40px 38px 34px;
     max-width:500px;width:100%;
-    margin-top:60px;
     box-shadow:0 0 100px rgba(255,80,20,0.05),0 25px 70px rgba(0,0,0,0.7);
     animation:cardIn 0.6s ease;
 }}
@@ -1330,22 +1335,15 @@ body{{
 .toast.show{{opacity:1;transform:translateX(-50%) translateY(0)}}
 .toast.ok{{border-color:rgba(16,185,129,0.2);color:#34D399}}
 @media(max-width:520px){{
-    .card{{padding:28px 20px 24px;margin-top:70px}}
+    .card{{padding:28px 20px 24px}}
     .user-name{{font-size:20px}}
     .brand-icon{{width:44px;height:44px;font-size:22px}}
     .info-item{{padding:11px 14px}}
     .btn{{font-size:11px;padding:8px 12px}}
-    .free-banner{{font-size:11px;padding:8px}}
 }}
 </style>
 </head>
 <body>
-<div class="free-banner">
-    <span>🔥</span>
-    <span>✅ این سرویس کاملاً <span class="hl">رایگان</span> است</span>
-    <span>🔥</span>
-</div>
-
 <div class="fire-particles">
     <div class="fire-particle" style="left:5%;animation-delay:0s;width:8px;height:8px"></div>
     <div class="fire-particle" style="left:15%;animation-delay:2s;width:5px;height:5px"></div>
@@ -1362,11 +1360,11 @@ body{{
 <div class="toast" id="toast"></div>
 <div class="card">
     <div class="brand">
-        <div class="brand-icon">🔥</div>
+        <div class="brand-icon">🦅</div>
         <div class="brand-text"><div class="name">پنل عقاب</div><div class="sub">اطلاعات اشتراک</div></div>
     </div>
     <div class="user-header">
-        <div class="user-name"><span class="fire">🔥</span> {label}</div>
+        <div class="user-name"><span class="fire">🦅</span> {label}</div>
         <span class="status {'active' if is_allowed else 'inactive'}">
             <i class="ti {'ti-circle-check' if is_allowed else 'ti-circle-x'}"></i>
             {'فعال' if is_allowed else 'غیرفعال'}
@@ -1398,7 +1396,7 @@ body{{
         <button class="btn btn-success" onclick="copySub()"><i class="ti ti-link"></i> کپی ساب‌لینک</button>
         <button class="btn btn-secondary" onclick="showQR()"><i class="ti ti-qrcode"></i> QR</button>
     </div>
-    <div class="footer"><span class="eagle">🔥</span> پنل عقاب · کاملاً رایگان</div>
+    <div class="footer"><span class="eagle">🦅</span> پنل عقاب</div>
 </div>
 <script>
 const vless = `{new_vless_link}`;
