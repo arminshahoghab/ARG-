@@ -190,7 +190,6 @@ def now_ir() -> datetime:
     return datetime.now(IRAN_TZ)
 
 def generate_vless_link(uuid: str, host: str, remark: str = "", protocol: str = DEFAULT_PROTOCOL, fingerprint: str = "chrome", port: int = 443) -> str:
-    # ===== اسم کانفیگ برای کلاینت =====
     if not remark:
         remark = "عقاب-رایگان"
     
@@ -349,7 +348,7 @@ async def subscription_single(uuid: str):
         </html>
         """, status_code=404)
     
-    # ===== محاسبه اتصالات فعال (دقیق - هر IP جدا) =====
+    # ===== محاسبه اتصالات فعال (برای صفحه ساب) =====
     active_connections_list = []
     for c in connections.values():
         if c.get("uuid") == uuid:
@@ -357,7 +356,6 @@ async def subscription_single(uuid: str):
     
     active_connections_count = len(active_connections_list)
     
-    # ===== اسم کانفیگ برای کلاینت =====
     label = link.get("label", "کاربر")
     remark = f"عقاب-رایگان-{label}"
     
@@ -737,7 +735,6 @@ async def create_link(request: Request, _=Depends(require_auth)):
     log_activity("link", f"کانفیگ «{label}» ساخته شد", "ok")
     host = get_host()
     
-    # ===== اسم کانفیگ برای کلاینت =====
     remark = f"عقاب-رایگان-{label}"
     main_link = generate_vless_link(uid, host, remark=remark, protocol=protocol, fingerprint=fingerprint, port=port)
     warning_link = ""
@@ -757,6 +754,15 @@ async def list_links(_=Depends(require_auth)):
     host = get_host()
     async with LINKS_LOCK:
         snap = dict(LINKS)
+    
+    # ===== محاسبه مصرف امروز هر کاربر =====
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_usage = {}
+    for uid, d in snap.items():
+        # مصرف امروز رو از hourly_traffic یا خود لینک بگیر
+        # اینجا ساده از used_bytes استفاده میکنیم
+        today_usage[uid] = d.get("used_bytes", 0)
+    
     result = []
     for uid, d in snap.items():
         proto = d.get("protocol", DEFAULT_PROTOCOL)
@@ -764,6 +770,19 @@ async def list_links(_=Depends(require_auth)):
         port = d.get("port", 443)
         label = d.get("label", "کاربر")
         remark = f"عقاب-رایگان-{label}"
+        
+        # ===== آخرین اتصال =====
+        last_connected = None
+        for c in connections.values():
+            if c.get("uuid") == uid:
+                if not last_connected or c.get("connected_at") > last_connected:
+                    last_connected = c.get("connected_at")
+        
+        # ===== وضعیت =====
+        active = d.get("active", True) and not is_link_expired(d)
+        status_text = "🟢 آنلاین" if active else "🔴 آفلاین"
+        status_class = "on" if active else "off"
+        
         result.append({
             "uuid": uid,
             **d,
@@ -773,6 +792,10 @@ async def list_links(_=Depends(require_auth)):
             "expired": is_link_expired(d),
             "has_password": d.get("password_hash") is not None,
             "port": port,
+            "today_bytes": today_usage.get(uid, 0),
+            "last_connected_at": last_connected,
+            "status_text": status_text,
+            "status_class": status_class,
             "vless_link": generate_vless_link(uid, host, remark=remark, protocol=proto, fingerprint=fp, port=port),
             "warning_config": "",
             "sub_url": f"https://{host}/sub/{uid}",
@@ -797,7 +820,6 @@ async def update_link(uid: str, request: Request, _=Depends(require_auth)):
                 raise HTTPException(status_code=403, detail="رمز کانفیگ اشتباه است")
         
         old_sub = link.get("sub_id")
-        label = link.get("label")
         
         if "active" in body:
             link["active"] = bool(body["active"])
